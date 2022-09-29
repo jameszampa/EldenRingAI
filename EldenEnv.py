@@ -108,15 +108,23 @@ class EldenEnv(gym.Env):
         if not self.death:
             # press keys according to action
             if action == 0:
+                self.keyboard.release('w')
+                self.keyboard.release('s')
                 self.keyboard.press('w')
                 # self.keys_pressed.append('w')
             elif action == 1:
+                self.keyboard.release('w')
+                self.keyboard.release('s')
                 self.keyboard.press('s')
                 # self.keys_pressed.append('s')
             elif action == 2:
+                self.keyboard.release('a')
+                self.keyboard.release('d')
                 self.keyboard.press('a')
                 # self.keys_pressed.append('a')
             elif action == 3:
+                self.keyboard.release('a')
+                self.keyboard.release('d')
                 self.keyboard.press('d')
                 # self.keys_pressed.append('d')
             elif action == 4:
@@ -139,6 +147,7 @@ class EldenEnv(gym.Env):
             elif action == 8:
                 self.keyboard.press('6')
                 self.keys_pressed.append('6')
+                time.sleep(0.5)
             elif action == 9:
                 self.keyboard.press(kb.Key.shift_l)
                 self.keys_pressed.append(kb.Key.shift_l)
@@ -150,6 +159,7 @@ class EldenEnv(gym.Env):
             elif action == 11:
                 self.keyboard.press(kb.Key.space)
                 self.keys_pressed.append(kb.Key.space)
+                time.sleep(0.5)
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
