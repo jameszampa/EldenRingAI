@@ -39,6 +39,7 @@ class EldenReward:
 
         self.current_stats = get_stats(self.character_slot)
         self.previous_stats = self.current_stats
+        self.max_hp = HP_CHART[self.current_stats[0]]
 
 
     def _get_runes_held(self, frame):
