@@ -37,6 +37,10 @@ class EldenReward:
         self.curr_boss_hp = None
         self.prev_boss_hp = None
 
+        self.current_stats = get_stats(self.character_slot)
+        self.previous_stats = self.current_stats
+
+
     def _get_runes_held(self, frame):
         runes_image = frame[1020:1050, 1715:1868]
         runes_image = cv2.resize(runes_image, (154*3, 30*3))
@@ -80,19 +84,18 @@ class EldenReward:
         else:
             runes_reward = 0
 
-        self.previous_stats = self.current_stats
-        self.current_stats = get_stats(self.character_slot)
-
-        self.max_hp = HP_CHART[self.current_stats[0]]
         if self.curr_hp is None:
             self.curr_hp = self.max_hp
         stat_reward = 0
         if not self.previous_stats is None and not self.current_stats is None:
-            for i, stat in enumerate(self.current_stats):
-                if self.current_stats[i] != self.previous_stats[i]:
-                    stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
+            if runes_reward < 0:
+                self.previous_stats = self.current_stats
+                self.current_stats = get_stats(self.character_slot)
+                self.max_hp = HP_CHART[self.current_stats[0]]
+                for i, stat in enumerate(self.current_stats):
+                    if self.current_stats[i] != self.previous_stats[i]:
+                        stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
         
-
         hp_reward = 0
         if not self.death:
             hp_image = frame[45:55, 155:155 + int(self.max_hp * self.hp_ratio)]
@@ -120,7 +123,7 @@ class EldenReward:
             #     self.curr_hp = self.max_hp
 
         if self.death:
-            hp_reward = -10000
+            hp_reward = -500
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
@@ -137,7 +140,7 @@ class EldenReward:
         boss_find_reward = 0
         # set_hp = False
         if not boss_name is None and 'Tree Sentinel' in boss_name:
-            boss_find_reward = 100
+            boss_find_reward = 600
             try:
                 boss_dmg_reward = self._get_boss_dmg(frame) * 10000
             except:

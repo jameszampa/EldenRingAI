@@ -9,28 +9,20 @@ from pynput import keyboard as kb
 from get_levels import get_stats
 from EldenReward import EldenReward
 
-DISCRETE_ACTIONS = {'alt_w': 'walk_forwards',
-                    'alt_s': 'walk_backwards',
-                    'alt_a': 'walk_left',
-                    'alt_d': 'walk_right',
+DISCRETE_ACTIONS = {'space_w': 'dodge_forwards',
+                    'space_s': 'dodge_backwards',
+                    'space_a': 'dodge_left',
+                    'space_d': 'dodge_right',
                     'w': 'run_forwards',
                     's': 'run_backwards',
                     'a': 'run_left',
                     'd': 'run_right',
-                    'q': 'lock_on',
-                    'space': 'dodge',
-                    'f': 'jump',
-                    'x': 'crouch',
-                    '1': 'switch_left_hand',
-                    '2': 'switch_right_hand',
-                    '3': 'switch_item',
-                    '4': 'switch_sorcery',
                     'm1': 'attack',
                     'shift+m1': 'strong_attack',
                     'm2': 'guard',
                     'shift+m2': 'skill',
-                    'r': 'use_item',
-                    'e': 'event_action'}
+                    'r': 'use_item'}
+                    #'e': 'event_action'}
                     # 'up': 'uparrow',
                     # 'down': 'downarrow',
                     # 'left': 'leftarrow',
@@ -117,25 +109,34 @@ class EldenEnv(gym.Env):
         if not self.death:
             # press keys according to action
             if action == 0:
-                self.keyboard.press(kb.Key.alt_l)
-                self.keys_pressed.append(kb.Key.alt_l)
                 self.keyboard.press('w')
                 self.keys_pressed.append('w')
+
+                self.keyboard.press(kb.Key.space)
+                time.sleep(0.05)
+                self.keyboard.release(kb.Key.space)
+
             elif action == 1:
-                self.keyboard.press(kb.Key.alt_l)
-                self.keys_pressed.append(kb.Key.alt_l)
                 self.keyboard.press('s')
                 self.keys_pressed.append('s')
+
+                self.keyboard.press(kb.Key.space)
+                time.sleep(0.05)
+                self.keyboard.release(kb.Key.space)
             elif action == 2:
-                self.keyboard.press(kb.Key.alt_l)
-                self.keys_pressed.append(kb.Key.alt_l)
                 self.keyboard.press('a')
                 self.keys_pressed.append('a')
+
+                self.keyboard.press(kb.Key.space)
+                time.sleep(0.05)
+                self.keyboard.release(kb.Key.space)
             elif action == 3:
-                self.keyboard.press(kb.Key.alt_l)
-                self.keys_pressed.append(kb.Key.alt_l)
                 self.keyboard.press('d')
                 self.keys_pressed.append('d')
+
+                self.keyboard.press(kb.Key.space)
+                time.sleep(0.05)
+                self.keyboard.release(kb.Key.space)
             elif action == 4:
                 self.keyboard.press('w')
                 self.keys_pressed.append('w')
@@ -149,63 +150,24 @@ class EldenEnv(gym.Env):
                 self.keyboard.press('d')
                 self.keys_pressed.append('d')
             elif action == 8:
-                self.keyboard.press(kb.Key.space)
-                self.keys_pressed.append(kb.Key.space)
+                self.keyboard.press('5')
+                self.keys_pressed.append('5')
             elif action == 9:
-                self.keyboard.press('f')
-                self.keys_pressed.append('f')
+                self.keyboard.press(kb.Key.shift_l)
+                self.keys_pressed.append(kb.Key.shift_l)
+                self.keyboard.press('5')
+                self.keys_pressed.append('5')
             elif action == 10:
-                self.keyboard.press('x')
-                self.keys_pressed.append('x')
+                self.keyboard.press('6')
+                self.keys_pressed.append('6')
             elif action == 11:
-                self.keyboard.press('1')
-                self.keys_pressed.append('1')
+                self.keyboard.press(kb.Key.shift_l)
+                self.keys_pressed.append(kb.Key.shift_l)
+                self.keyboard.press('6')
+                self.keys_pressed.append('6')
             elif action == 12:
-                self.keyboard.press('2')
-                self.keys_pressed.append('2')
-            elif action == 13:
-                self.keyboard.press('3')
-                self.keys_pressed.append('3')
-            elif action == 14:
-                self.keyboard.press('4')
-                self.keys_pressed.append('4')
-            elif action == 15:
-                self.keyboard.press('5')
-                self.keys_pressed.append('5')
-            elif action == 16:
-                self.keyboard.press(kb.Key.shift_l)
-                self.keys_pressed.append(kb.Key.shift_l)
-                self.keyboard.press('5')
-                self.keys_pressed.append('5')
-            elif action == 17:
-                self.keyboard.press('6')
-                self.keys_pressed.append('6')
-            elif action == 18:
-                self.keyboard.press(kb.Key.shift_l)
-                self.keys_pressed.append(kb.Key.shift_l)
-                self.keyboard.press('6')
-                self.keys_pressed.append('6')
-            elif action == 19:
                 self.keyboard.press('r')
                 self.keys_pressed.append('r')
-            elif action == 20:
-                self.keyboard.press('e')
-                self.keys_pressed.append('e')
-            elif action == 21:
-                self.keyboard.press(kb.Key.up)
-                self.keys_pressed.append(kb.Key.up)
-            elif action == 22:
-                self.keyboard.press(kb.Key.down)
-                self.keys_pressed.append(kb.Key.down)
-            elif action == 23:
-                self.keyboard.press(kb.Key.left)
-                self.keys_pressed.append(kb.Key.left)
-            elif action == 24:
-                self.keyboard.press(kb.Key.right)
-                self.keys_pressed.append(kb.Key.right)
-            elif action == 25:
-                self.keyboard.press(kb.Key.esc)
-                self.keys_pressed.append(kb.Key.esc)
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
