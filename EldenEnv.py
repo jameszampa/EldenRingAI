@@ -82,6 +82,8 @@ class EldenEnv(gym.Env):
         self.rewardGen = EldenReward(6)
         self.death = False
 
+        self.t_start = None
+
 
     def step(self, action):
         # Make sure elden ring is the active window
@@ -106,6 +108,22 @@ class EldenEnv(gym.Env):
         self.reward = runes + stat + hp + dmg_reward + find_reward
 
         if not self.death:
+            # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
+            if time.time() - self.t_start > 600:
+                self.keyboard.press('e')
+                self.keyboard.press('4')
+                time.sleep(0.05)
+                self.keyboard.release('e')
+                self.keyboard.release('4')
+
+                self.keyboard.press(kb.Key.left)
+                time.sleep(0.05)
+                self.keyboard.release(kb.Key.left)
+
+                self.keyboard.press('e')
+                time.sleep(0.05)
+                self.keyboard.release('e')
+                self.done = True
             # press keys according to action
             if action == 0:
                 self.keyboard.release('w')
@@ -160,6 +178,13 @@ class EldenEnv(gym.Env):
                 self.keyboard.press(kb.Key.space)
                 self.keys_pressed.append(kb.Key.space)
                 time.sleep(0.5)
+        else:
+            self.keyboard.release('w')
+            self.keyboard.release('s')
+            self.keyboard.release('a')
+            self.keyboard.release('d')
+            time.sleep(10)
+            self.done = True
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
@@ -175,6 +200,8 @@ class EldenEnv(gym.Env):
         self.done = False
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
+
+        self.t_start = time.time()
 
         return observation
 
