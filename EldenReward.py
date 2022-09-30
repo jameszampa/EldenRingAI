@@ -123,8 +123,11 @@ class EldenReward:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
 
+        if hp_reward < 0:
+            hp_reward /= 2
+
         if self.death:
-            hp_reward = -500
+            hp_reward = -250
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
@@ -141,7 +144,7 @@ class EldenReward:
         boss_find_reward = 0
         # set_hp = False
         if not boss_name is None and 'Tree Sentinel' in boss_name:
-            boss_find_reward = 600
+            boss_find_reward = 1000
             try:
                 boss_dmg_reward = self._get_boss_dmg(frame) * 10000
             except:

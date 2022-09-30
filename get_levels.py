@@ -74,7 +74,7 @@ def import_save():
 
     if os.path.isdir(savedir) is False:
         os.makedirs(savedir)
-    d = r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561198059144503/ER0000.sl2"
+    d = r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561199402743988/ER0000.sl2"
     names = get_charnames(d)
     for name in names:
         if name is None:
@@ -103,8 +103,8 @@ def get_stats(char_slot):
     #dict_stats = {}
     #for i, name in enumerate(names):
         # if name is None:
-        #     continue
-    stats = hexedit.get_stats(r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561198059144503/ER0000.sl2", char_slot)
+        #     continueC:\Users\James Zampa\AppData\Roaming\EldenRing\76561199402743988
+    stats = hexedit.get_stats(r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561199402743988/ER0000.sl2", char_slot)
         # if stats is None:
         #     continue
         # dict_stats[name] = stats[0]

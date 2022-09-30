@@ -79,7 +79,7 @@ class EldenEnv(gym.Env):
 
         self.reward = 0
 
-        self.rewardGen = EldenReward(6)
+        self.rewardGen = EldenReward(1)
         self.death = False
 
 
