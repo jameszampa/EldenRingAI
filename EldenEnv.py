@@ -109,20 +109,26 @@ class EldenEnv(gym.Env):
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
-            if time.time() - self.t_start > 600:
+            if time.time() - self.t_start > 120:
                 self.keyboard.press('e')
                 self.keyboard.press('4')
                 time.sleep(0.05)
                 self.keyboard.release('e')
                 self.keyboard.release('4')
 
+                time.sleep(0.05)
+
                 self.keyboard.press(kb.Key.left)
                 time.sleep(0.05)
                 self.keyboard.release(kb.Key.left)
 
+                time.sleep(0.05)
+
                 self.keyboard.press('e')
                 time.sleep(0.05)
                 self.keyboard.release('e')
+
+                time.sleep(10)
                 self.done = True
             # press keys according to action
             if action == 0:
