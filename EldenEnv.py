@@ -63,7 +63,7 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
         
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
 
@@ -76,26 +76,28 @@ class EldenEnv(gym.Env):
         
         self.path_elden_ring = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\ELDEN RING\\Game\\eldenring.exe'
 
-        self._start_elden_ring(self.path_elden_ring)
+        self._start_elden_ring()
 
         self.keyboard = kb.Controller()
         self.keys_pressed = []
         
         #let load
-        time.sleep(30)
+        time.sleep(35)
 
         # get to continue
-        for i in range(10):
-            self.keyboard.press("q")
-            time.sleep(0.05)
-            self.keyboard.release("q")
-            time.sleep(0.05)
-        
-        # press continue
-        self.keyboard.press("e")
-        time.sleep(0.05)
-        self.keyboard.release("q")
-        time.sleep(0.05)
+        press_q = True
+        for i in range(15):
+            if press_q:
+                self.keyboard.press("q")
+                time.sleep(0.05)
+                self.keyboard.release("q")
+                press_q = False
+            else:
+                self.keyboard.press("e")
+                time.sleep(0.05)
+                self.keyboard.release("e")
+                press_q = True
+            time.sleep(1)
 
         # wait for load
         time.sleep(15)
@@ -106,7 +108,7 @@ class EldenEnv(gym.Env):
 
         self.reward = 0
 
-        self.rewardGen = EldenReward(1)
+        self.rewardGen = EldenReward(6)
         self.death = False
 
         self.t_start = None
@@ -246,27 +248,32 @@ class EldenEnv(gym.Env):
 
         if "Next" in next_text:
             self._stop_elden_ring()
-            time.sleep(15)
-            self._start_elden_ring(self.path_elden_ring)
+            time.sleep(25)
+            self._start_elden_ring()
             
             #let load
             time.sleep(30)
 
-            # get to continue
-            for i in range(10):
-                self.keyboard.press("q")
-                time.sleep(0.05)
-                self.keyboard.release("q")
-                time.sleep(0.05)
-            
-            # press continue
-            self.keyboard.press("e")
-            time.sleep(0.05)
-            self.keyboard.release("e")
-            time.sleep(0.05)
+            press_q = True
+            for i in range(15):
+                if press_q:
+                    self.keyboard.press("q")
+                    time.sleep(0.05)
+                    self.keyboard.release("q")
+                    press_q = False
+                else:
+                    self.keyboard.press("e")
+                    time.sleep(0.05)
+                    self.keyboard.release("e")
+                    press_q = True
+                time.sleep(1)
 
             # wait for load
             time.sleep(15)
+
+            self.w = WindowMgr()
+            self.w.find_window_wildcard('ELDEN RING.*')
+            self.w.set_foreground()
 
             self.keyboard.press('e')
             self.keyboard.press('4')
