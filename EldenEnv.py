@@ -63,7 +63,7 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
         
-        self.cap = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
 
@@ -108,7 +108,7 @@ class EldenEnv(gym.Env):
 
         self.reward = 0
 
-        self.rewardGen = EldenReward(6)
+        self.rewardGen = EldenReward(1)
         self.death = False
 
         self.t_start = None
@@ -153,13 +153,13 @@ class EldenEnv(gym.Env):
                 self.keyboard.release('e')
                 self.keyboard.release('4')
 
-                time.sleep(0.05)
+                time.sleep(0.1)
 
                 self.keyboard.press(kb.Key.left)
                 time.sleep(0.05)
                 self.keyboard.release(kb.Key.left)
 
-                time.sleep(0.05)
+                time.sleep(0.1)
 
                 self.keyboard.press('e')
                 time.sleep(0.05)
@@ -281,13 +281,13 @@ class EldenEnv(gym.Env):
             self.keyboard.release('e')
             self.keyboard.release('4')
 
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             self.keyboard.press(kb.Key.left)
             time.sleep(0.05)
             self.keyboard.release(kb.Key.left)
 
-            time.sleep(0.05)
+            time.sleep(0.1)
 
             self.keyboard.press('e')
             time.sleep(0.05)

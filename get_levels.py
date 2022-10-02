@@ -104,7 +104,7 @@ def get_stats(char_slot):
     #for i, name in enumerate(names):
         # if name is None:
         #     continueC:\Users\James Zampa\AppData\Roaming\EldenRing\76561199402743988
-    stats = hexedit.get_stats(r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561198059144503/ER0000.sl2", char_slot)
+    stats = hexedit.get_stats(r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561199402743988/ER0000.sl2", char_slot)
         # if stats is None:
         #     continue
         # dict_stats[name] = stats[0]
