@@ -1,13 +1,17 @@
-import gym
-from gym import spaces
-import numpy as np
+import os
 import cv2
-from WindowManager import WindowMgr
-import pytesseract
+import gym
 import time
+import subprocess
+import numpy as np
+import pytesseract
+from gym import spaces
 from pynput import keyboard as kb
-from get_levels import get_stats
+from WindowManager import WindowMgr
 from EldenReward import EldenReward
+
+
+
 
 DISCRETE_ACTIONS = {'w': 'run_forwards',
                     's': 'run_backwards',
@@ -70,12 +74,35 @@ class EldenEnv(gym.Env):
         # cv2.imshow('THE VIDEO GAME', frame)
         # cv2.waitKey(1)
         
-        self.w = WindowMgr()
-        self.w.find_window_wildcard('ELDEN RING.*')
-        self.w.set_foreground()
+        self.path_elden_ring = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\ELDEN RING\\Game\\eldenring.exe'
+
+        self._start_elden_ring(self.path_elden_ring)
 
         self.keyboard = kb.Controller()
         self.keys_pressed = []
+        
+        #let load
+        time.sleep(30)
+
+        # get to continue
+        for i in range(10):
+            self.keyboard.press("q")
+            time.sleep(0.05)
+            self.keyboard.release("q")
+            time.sleep(0.05)
+        
+        # press continue
+        self.keyboard.press("e")
+        time.sleep(0.05)
+        self.keyboard.release("q")
+        time.sleep(0.05)
+
+        # wait for load
+        time.sleep(15)
+        
+        self.w = WindowMgr()
+        self.w.find_window_wildcard('ELDEN RING.*')
+        self.w.set_foreground()
 
         self.reward = 0
 
@@ -83,6 +110,14 @@ class EldenEnv(gym.Env):
         self.death = False
 
         self.t_start = None
+
+
+    def _start_elden_ring(self):
+        subprocess.run([self.path_elden_ring])
+
+
+    def _stop_elden_ring(self):
+        os.system("taskkill /im eldenring.exe")
 
 
     def step(self, action):
@@ -204,6 +239,54 @@ class EldenEnv(gym.Env):
 
         ret, frame = self.cap.read()
         self.done = False
+
+        next_text_image = frame[1015:1040, 155:205]
+        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+
+        if "Next" in next_text:
+            self._stop_elden_ring()
+            time.sleep(15)
+            self._start_elden_ring(self.path_elden_ring)
+            
+            #let load
+            time.sleep(30)
+
+            # get to continue
+            for i in range(10):
+                self.keyboard.press("q")
+                time.sleep(0.05)
+                self.keyboard.release("q")
+                time.sleep(0.05)
+            
+            # press continue
+            self.keyboard.press("e")
+            time.sleep(0.05)
+            self.keyboard.release("e")
+            time.sleep(0.05)
+
+            # wait for load
+            time.sleep(15)
+
+            self.keyboard.press('e')
+            self.keyboard.press('4')
+            time.sleep(0.05)
+            self.keyboard.release('e')
+            self.keyboard.release('4')
+
+            time.sleep(0.05)
+
+            self.keyboard.press(kb.Key.left)
+            time.sleep(0.05)
+            self.keyboard.release(kb.Key.left)
+
+            time.sleep(0.05)
+
+            self.keyboard.press('e')
+            time.sleep(0.05)
+            self.keyboard.release('e')
+
+            time.sleep(10)
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
 
