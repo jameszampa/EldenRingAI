@@ -82,7 +82,11 @@ class EldenEnv(gym.Env):
         self.keys_pressed = []
         
         #let load
-        time.sleep(35)
+        time.sleep(120)
+
+        self.w = WindowMgr()
+        self.w.find_window_wildcard('ELDEN RING.*')
+        self.w.set_foreground()
 
         # get to continue
         press_q = True
@@ -100,12 +104,8 @@ class EldenEnv(gym.Env):
             time.sleep(1)
 
         # wait for load
-        time.sleep(15)
+        time.sleep(30)
         
-        self.w = WindowMgr()
-        self.w.find_window_wildcard('ELDEN RING.*')
-        self.w.set_foreground()
-
         self.reward = 0
 
         self.rewardGen = EldenReward(1)
@@ -165,7 +165,12 @@ class EldenEnv(gym.Env):
                 time.sleep(0.05)
                 self.keyboard.release('e')
 
-                time.sleep(10)
+                self.keyboard.release('w')
+                self.keyboard.release('s')
+                self.keyboard.release('a')
+                self.keyboard.release('d')
+
+                time.sleep(30)
                 self.done = True
             # press keys according to action
             if action == 0:
@@ -226,7 +231,7 @@ class EldenEnv(gym.Env):
             self.keyboard.release('s')
             self.keyboard.release('a')
             self.keyboard.release('d')
-            time.sleep(10)
+            time.sleep(30)
             self.done = True
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
@@ -239,20 +244,30 @@ class EldenEnv(gym.Env):
         # Make sure elden ring is the active window
         self.w.set_foreground()
 
-        ret, frame = self.cap.read()
-        self.done = False
+        # check frozen load screen
+        reset = 0
+        for i in range(10):
+            ret, frame = self.cap.read()
+            self.done = False
 
-        next_text_image = frame[1015:1040, 155:205]
-        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
-        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+            next_text_image = frame[1015:1040, 155:205]
+            next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+            next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+            if "Next" in next_text:
+                reset += 1
+            time.sleep(1)
 
-        if "Next" in next_text:
+        if reset >= 8:
             self._stop_elden_ring()
-            time.sleep(25)
+            time.sleep(120)
             self._start_elden_ring()
             
             #let load
-            time.sleep(30)
+            time.sleep(120)
+
+            self.w = WindowMgr()
+            self.w.find_window_wildcard('ELDEN RING.*')
+            self.w.set_foreground()
 
             press_q = True
             for i in range(15):
@@ -269,11 +284,7 @@ class EldenEnv(gym.Env):
                 time.sleep(1)
 
             # wait for load
-            time.sleep(15)
-
-            self.w = WindowMgr()
-            self.w.find_window_wildcard('ELDEN RING.*')
-            self.w.set_foreground()
+            time.sleep(30)
 
             self.keyboard.press('e')
             self.keyboard.press('4')
