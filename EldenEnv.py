@@ -82,7 +82,7 @@ class EldenEnv(gym.Env):
         self.keys_pressed = []
         
         #let load
-        time.sleep(120)
+        time.sleep(180)
 
         self.w = WindowMgr()
         self.w.find_window_wildcard('ELDEN RING.*')
@@ -147,28 +147,30 @@ class EldenEnv(gym.Env):
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if time.time() - self.t_start > 120:
-                self.keyboard.press('e')
-                self.keyboard.press('4')
-                time.sleep(0.05)
-                self.keyboard.release('e')
-                self.keyboard.release('4')
-
-                time.sleep(0.1)
-
-                self.keyboard.press(kb.Key.left)
-                time.sleep(0.05)
-                self.keyboard.release(kb.Key.left)
-
-                time.sleep(0.1)
-
-                self.keyboard.press('e')
-                time.sleep(0.05)
-                self.keyboard.release('e')
-
                 self.keyboard.release('w')
                 self.keyboard.release('s')
                 self.keyboard.release('a')
                 self.keyboard.release('d')
+
+                time.sleep(1)
+
+                self.keyboard.press('e')
+                self.keyboard.press('4')
+                time.sleep(0.1)
+                self.keyboard.release('e')
+                self.keyboard.release('4')
+
+                time.sleep(1)
+
+                self.keyboard.press(kb.Key.left)
+                time.sleep(0.1)
+                self.keyboard.release(kb.Key.left)
+
+                time.sleep(1)
+
+                self.keyboard.press('e')
+                time.sleep(0.1)
+                self.keyboard.release('e')
 
                 time.sleep(30)
                 self.done = True
@@ -286,25 +288,32 @@ class EldenEnv(gym.Env):
             # wait for load
             time.sleep(30)
 
+            self.keyboard.release('w')
+            self.keyboard.release('s')
+            self.keyboard.release('a')
+            self.keyboard.release('d')
+
+            time.sleep(1)
+
             self.keyboard.press('e')
             self.keyboard.press('4')
-            time.sleep(0.05)
+            time.sleep(0.1)
             self.keyboard.release('e')
             self.keyboard.release('4')
 
-            time.sleep(0.1)
+            time.sleep(1)
 
             self.keyboard.press(kb.Key.left)
-            time.sleep(0.05)
+            time.sleep(0.1)
             self.keyboard.release(kb.Key.left)
 
-            time.sleep(0.1)
+            time.sleep(1)
 
             self.keyboard.press('e')
-            time.sleep(0.05)
+            time.sleep(0.1)
             self.keyboard.release('e')
 
-            time.sleep(10)
+            time.sleep(30)
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
 
