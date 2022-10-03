@@ -38,7 +38,7 @@ class EldenReward:
         self.curr_boss_hp = None
         self.prev_boss_hp = None
 
-        self.agent_ip = 'localhost'
+        self.agent_ip = '192.168.4.70'
         self._request_stats()
 
 

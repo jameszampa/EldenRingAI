@@ -62,7 +62,7 @@ class EldenEnv(gym.Env):
         self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
-        self.agent_ip = 'localhost'
+        self.agent_ip = '192.168.4.70'
 
         ret, _ = self.cap.read()
         if not ret:
