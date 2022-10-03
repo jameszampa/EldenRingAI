@@ -58,7 +58,7 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
         
-        self.cap = cv2.VideoCapture('/dev/video0')
+        self.cap = cv2.VideoCapture('/dev/usb/hiddev1')
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
         self.agent_ip = '192.168.4.70'
