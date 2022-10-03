@@ -72,9 +72,8 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
         time.sleep(180)
 
-        self.w = WindowMgr()
-        self.w.find_window_wildcard('ELDEN RING.*')
-        self.w.set_foreground()
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
@@ -87,8 +86,8 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
-        # Make sure elden ring is the active window
-        self.w.set_foreground()
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
@@ -118,8 +117,8 @@ class EldenEnv(gym.Env):
         return observation, self.reward, self.done, info
     
     def reset(self):
-        # Make sure elden ring is the active window
-        self.w.set_foreground()
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         # check frozen load screen
         reset = 0
@@ -142,9 +141,8 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
             time.sleep(180)
 
-            self.w = WindowMgr()
-            self.w.find_window_wildcard('ELDEN RING.*')
-            self.w.set_foreground()
+            headers = {"Content-Type": "application/json"}
+            requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)

@@ -5,6 +5,7 @@ import secrets
 import subprocess
 from get_levels import get_stats
 from pynput import keyboard as kb
+from WindowManager import WindowMgr
 from flask import Flask, request, Response
 
 
@@ -19,6 +20,19 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
 elden_agent = EldenAgent()
 
+
+@app.route('/action/focus_window', methods=["POST"])
+def focus_window():
+    if request.method == 'POST':
+        try:
+            elden_agent.w = WindowMgr()
+            elden_agent.w.find_window_wildcard('ELDEN RING.*')
+            elden_agent.w.set_foreground()
+            return Response(status=200)
+        except Exception as e:
+            return 400, json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
 
 
 @app.route('/action/load_save', methods=["POST"])
