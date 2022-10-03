@@ -45,8 +45,8 @@ class EldenReward:
     def _request_stats(self):
         headers = {"Content-Type": "application/json"}
         response = requests.get(f"http://{self.agent_ip}:6000/stats/{self.character_slot}", headers=headers)
-        print(response)
-        stats = json.loads(response.json())
+        stats = response.json()
+        print(stats)
 
         self.previous_stats = self.current_stats
         self.current_stats = [stats['vigor'],
