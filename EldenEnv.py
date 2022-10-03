@@ -100,15 +100,17 @@ class EldenEnv(gym.Env):
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
-            if time.time() - self.t_start > 120:
+            if (time.time() - self.t_start) > 120:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                self.done = True
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
         else:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+            self.done = True
             
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
@@ -151,6 +153,7 @@ class EldenEnv(gym.Env):
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.t_start = time.time()
+        self.done = False
 
         return observation
 
