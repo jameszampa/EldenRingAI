@@ -30,7 +30,7 @@ def focus_window():
             elden_agent.w.set_foreground()
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -55,7 +55,7 @@ def load_save():
             time.sleep(30)
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -71,7 +71,7 @@ def death_reset():
             time.sleep(30)
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -135,7 +135,7 @@ def custom_action(action):
                 time.sleep(0.5)
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -172,7 +172,7 @@ def return_to_grace():
             time.sleep(30)
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -184,7 +184,7 @@ def stop_elden_ring():
             os.system("taskkill /im eldenring.exe")
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -196,7 +196,7 @@ def start_elden_ring():
             subprocess.run([elden_agent.path_elden_ring])
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -210,7 +210,7 @@ def release_keys():
             elden_agent.keys_pressed = []
             return Response(status=200)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
 
@@ -231,8 +231,8 @@ def get_stats(char_slot=None):
                         'intelligence' : stats[5],
                         'faith' : stats[6],
                         'arcane' : stats[7]}
-            return 200, json.dumps(json_stats)
+            return json.dumps(json_stats)
         except Exception as e:
-            return 400, json.dumps({'error':str(e)})
+            return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
