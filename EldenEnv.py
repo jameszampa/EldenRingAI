@@ -7,7 +7,6 @@ import subprocess
 import numpy as np
 import pytesseract
 from gym import spaces
-from WindowManager import WindowMgr
 from EldenReward import EldenReward
 
 
