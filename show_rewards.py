@@ -2,7 +2,7 @@ import cv2
 from EldenReward import EldenReward
 import time
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture('/dev/video0')
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
