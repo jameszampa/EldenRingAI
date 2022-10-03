@@ -216,7 +216,7 @@ def release_keys():
 
 
 @app.route('/stats/<char_slot>', methods=["GET"])
-def get_stats(char_slot=None):
+def request_stats(char_slot=None):
     if char_slot is None:
         return Response(status=400)
     
