@@ -1,8 +1,9 @@
 import cv2
+import json
 import numpy as np
 import pytesseract
-from get_levels import get_stats
 import time
+import requests
 
 
 HP_CHART = {}
@@ -37,8 +38,24 @@ class EldenReward:
         self.curr_boss_hp = None
         self.prev_boss_hp = None
 
-        self.current_stats = get_stats(self.character_slot)
+        self.agent_ip = 'localhost'
+        self._request_stats()
+
+
+    def _request_stats(self):
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/stats/{self.character_slot}", headers=headers)
+        stats = json.loads(response.json())
+
         self.previous_stats = self.current_stats
+        self.current_stats = [stats['vigor'],
+                              stats['mind'],
+                              stats['endurance'],
+                              stats['strength'],
+                              stats['dexterity'],
+                              stats['intelligence'],
+                              stats['faith'],
+                              stats['arcane']]
         self.max_hp = HP_CHART[self.current_stats[0]]
 
 
@@ -71,7 +88,6 @@ class EldenReward:
         else:
             return 0
 
-
         
     def update(self, frame):
         self.previous_runes_held = self.current_runes_held
@@ -90,9 +106,7 @@ class EldenReward:
         stat_reward = 0
         if not self.previous_stats is None and not self.current_stats is None:
             if runes_reward < 0:
-                self.previous_stats = self.current_stats
-                self.current_stats = get_stats(self.character_slot)
-                self.max_hp = HP_CHART[self.current_stats[0]]
+                self._request_stats()
                 for i, stat in enumerate(self.current_stats):
                     if self.current_stats[i] != self.previous_stats[i]:
                         stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000

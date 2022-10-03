@@ -22,5 +22,5 @@ while True:
     print('dmg_reward', dmg_reward)
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
-    #cv2.imshow('er', frame[840:860, 1410:1480])
-    #cv2.waitKey(1)
+    cv2.imshow('er', frame[840:860, 1410:1480])
+    cv2.waitKey(1)
