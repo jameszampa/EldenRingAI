@@ -25,6 +25,7 @@ elden_agent = EldenAgent()
 def focus_window():
     if request.method == 'POST':
         try:
+            print('FOCUS WINDOW')
             elden_agent.w = WindowMgr()
             elden_agent.w.find_window_wildcard('ELDEN RING.*')
             elden_agent.w.set_foreground()
@@ -39,6 +40,7 @@ def focus_window():
 def load_save():
     if request.method == 'POST':
         try:
+            print('LOAD SAVE')
             press_q = True
             for i in range(15):
                 if press_q:
@@ -64,6 +66,7 @@ def load_save():
 def death_reset():
     if request.method == 'POST':
         try:
+            print('DEATH RESET')
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
@@ -80,6 +83,8 @@ def death_reset():
 def custom_action(action):
     if request.method == 'POST':
         try:
+            print('CUSTOM ACTION')
+            action = int(action)
             if action == 0:
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
@@ -144,6 +149,7 @@ def custom_action(action):
 def return_to_grace():
     if request.method == 'POST':
         try:
+            print('RETURN TO GRACE')
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
@@ -181,6 +187,7 @@ def return_to_grace():
 def stop_elden_ring():
     if request.method == 'POST':
         try:
+            print('STOP ELDEN RING')
             os.system("taskkill /im eldenring.exe")
             return Response(status=200)
         except Exception as e:
@@ -193,6 +200,7 @@ def stop_elden_ring():
 def start_elden_ring():
     if request.method == 'POST':
         try:
+            print('START ELDEN RING')
             subprocess.run([elden_agent.path_elden_ring])
             return Response(status=200)
         except Exception as e:
@@ -205,6 +213,7 @@ def start_elden_ring():
 def release_keys():
     if request.method == 'POST':
         try:
+            print('RELEASE KEYS')
             for key in elden_agent.keys_pressed:
                 elden_agent.keyboard.release(key)
             elden_agent.keys_pressed = []
@@ -222,6 +231,7 @@ def request_stats(char_slot=None):
     
     if request.method == 'GET':
         try:
+            print('GET STATS')
             stats = get_stats(int(char_slot))
             json_stats = {'vigor' : stats[0],
                         'mind' : stats[1],
