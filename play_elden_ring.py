@@ -181,7 +181,7 @@ def return_to_grace():
 def stop_elden_ring():
     if request.method == 'POST':
         try:
-            os.system("taskkill /im eldenring.exe")
+            os.system("taskkill /f /im eldenring.exe")
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

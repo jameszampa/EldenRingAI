@@ -137,7 +137,7 @@ class EldenEnv(gym.Env):
         if reset >= 8:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
-            time.sleep(120)
+            time.sleep(5 * 60)
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
             time.sleep(180)
