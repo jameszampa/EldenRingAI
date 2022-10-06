@@ -107,6 +107,7 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
+                time.sleep(0.25)
         else:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)

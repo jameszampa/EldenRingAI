@@ -166,4 +166,4 @@ class EldenReward:
                 pass
             
 
-        return runes_reward, stat_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward
+        return 0, 0, 0, self.death, boss_dmg_reward, boss_find_reward
