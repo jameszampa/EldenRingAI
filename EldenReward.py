@@ -165,7 +165,7 @@ class EldenReward:
             self.seen_boss = True
             self.time_since_seen_boss = time.time()
         
-        if (time.time() - self.time_since_seen_boss) < boss_timeout:
+        if not self.time_since_seen_boss is None and (time.time() - self.time_since_seen_boss) < boss_timeout:
             time_since_boss = time.time() - self.time_since_seen_boss
             if time_since_boss < boss_timeout:
                 boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
