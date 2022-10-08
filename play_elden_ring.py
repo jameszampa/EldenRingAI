@@ -26,9 +26,43 @@ def focus_window():
     if request.method == 'POST':
         try:
             print('FOCUS WINDOW(Do Nothing)')
-            # elden_agent.w = WindowMgr()
-            # elden_agent.w.find_window_wildcard('ELDEN RING.*')
-            # elden_agent.w.set_foreground()
+            try:
+                elden_agent.w = WindowMgr()
+                elden_agent.w.find_window_wildcard('ELDEN RING.*')
+                elden_agent.w.set_foreground()
+            except Exception as e:
+                print("ERROR: Could not fild Elden Ring Restarting")
+                time.sleep(180)
+                os.system("taskkill /f /im eldenring.exe")
+                time.sleep(180)
+                subprocess.run([elden_agent.path_elden_ring])
+                time.sleep(180)
+                elden_agent.keyboard.release('w')
+                elden_agent.keyboard.release('s')
+                elden_agent.keyboard.release('a')
+                elden_agent.keyboard.release('d')
+
+                time.sleep(1)
+
+                elden_agent.keyboard.press('e')
+                elden_agent.keyboard.press('4')
+                time.sleep(0.1)
+                elden_agent.keyboard.release('e')
+                elden_agent.keyboard.release('4')
+
+                time.sleep(1)
+
+                elden_agent.keyboard.press(kb.Key.left)
+                time.sleep(0.1)
+                elden_agent.keyboard.release(kb.Key.left)
+
+                time.sleep(1)
+
+                elden_agent.keyboard.press('e')
+                time.sleep(0.1)
+                elden_agent.keyboard.release('e')
+
+                time.sleep(30)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
