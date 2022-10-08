@@ -171,4 +171,6 @@ class EldenReward:
                 self.time_since_death = time.time()
                 self.curr_hp = self.max_hp
                 self.death = False
-            return 0, 0, hp_reward, self.death, boss_dmg_reward, boss_find_reward
+                return 0, 0, hp_reward, True, boss_dmg_reward, boss_find_reward
+            else:
+                return 0, 0, hp_reward, self.death, boss_dmg_reward, boss_find_reward
