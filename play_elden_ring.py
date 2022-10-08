@@ -210,6 +210,7 @@ def return_to_grace():
             elden_agent.keyboard.release('e')
 
             time.sleep(30)
+            elden_agent.keyboard.press('w')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

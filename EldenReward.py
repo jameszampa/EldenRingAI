@@ -21,6 +21,7 @@ class EldenReward:
 
         self.previous_stats = None
         self.current_stats = None
+        self.seen_boss = False
 
         self.max_hp = None
         self.prev_hp = None
@@ -159,6 +160,7 @@ class EldenReward:
         boss_find_reward = 0
         # set_hp = False
         if not boss_name is None and 'Tree Sentinel' in boss_name:
+            self.seen_boss = True
             boss_find_reward = 1000
             try:
                 boss_dmg_reward = self._get_boss_dmg(frame) * 10000
