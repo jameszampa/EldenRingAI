@@ -33,8 +33,8 @@ class EldenReward:
 
         self.death_ratio = 0.11
 
-        self.time_since_death = None
-        self.time_since_seen_boss = None
+        self.time_since_death = time.time()
+        self.time_since_seen_boss = time.time()
 
         self.death = False
         self.curr_boss_hp = None
@@ -133,48 +133,42 @@ class EldenReward:
                         self.prev_hp = self.curr_hp
                         self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
                         if not self.prev_hp is None and not self.curr_hp is None:
-                            hp_reward += (self.curr_hp - self.prev_hp) * 10
+                            hp_reward += (self.curr_hp - self.prev_hp)
                         break
+            boss_name = self._get_boss_name(frame)
+            boss_dmg_reward = 0
+            boss_find_reward = 0
+            boss_timeout = 2.5
+            # set_hp = False
+            if not boss_name is None and 'Tree Sentinel' in boss_name:
+                self.seen_boss = True
+                self.time_since_seen_boss = time.time()
             
+            if not self.time_since_seen_boss is None:
+                time_since_boss = time.time() - self.time_since_seen_boss
+                if time_since_boss < boss_timeout:
+                    boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+                else:
+                    boss_find_reward = -time_since_boss * 25
+                
+                try:
+                    boss_dmg_reward = self._get_boss_dmg(frame) * 100
+                except:
+                    pass
             # if p_count < 10:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
 
-        if self.death:
+        if not self.death and not self.curr_hp is None:
+            self.death = (self.curr_hp / self.max_hp) < self.death_ratio
             time_alive = time.time() - self.time_since_death
             if time_alive > TOTAL_ACTIONABLE_TIME:
                 time_alive = TOTAL_ACTIONABLE_TIME
-            hp_reward = -((TOTAL_ACTIONABLE_TIME - (time_alive)) / TOTAL_ACTIONABLE_TIME) * 100
-
-        if not self.death and not self.curr_hp is None:
-            self.death = (self.curr_hp / self.max_hp) < self.death_ratio
+            if hp_reward == 0:
+                hp_reward = (time_alive / TOTAL_ACTIONABLE_TIME) * 10
             if self.death:
+                hp_reward = -250
                 self.time_since_death = time.time()
-
-        if self.death:
-            if (time.time() - self.time_since_death) > 25:
                 self.curr_hp = self.max_hp
                 self.death = False
-
-        boss_name = self._get_boss_name(frame)
-        boss_dmg_reward = 0
-        boss_find_reward = 0
-        boss_timeout = 2.5
-        # set_hp = False
-        if not boss_name is None and 'Tree Sentinel' in boss_name:
-            self.seen_boss = True
-            self.time_since_seen_boss = time.time()
-        
-        if not self.time_since_seen_boss is None and (time.time() - self.time_since_seen_boss) < boss_timeout:
-            time_since_boss = time.time() - self.time_since_seen_boss
-            if time_since_boss < boss_timeout:
-                boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
-            else:
-                boss_find_reward = -time_since_boss * 25
-            
-            try:
-                boss_dmg_reward = self._get_boss_dmg(frame) * 10000
-            except:
-                pass
-
-        return 0, 0, 0, self.death, boss_dmg_reward, boss_find_reward
+            return 0, 0, hp_reward, self.death, boss_dmg_reward, boss_find_reward
