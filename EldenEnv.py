@@ -7,6 +7,7 @@ import subprocess
 import numpy as np
 import pytesseract
 from gym import spaces
+TOTAL_ACTIONABLE_TIME = 120
 from EldenReward import EldenReward
 
 
@@ -35,7 +36,7 @@ IMG_WIDTH = 1920
 IMG_HEIGHT = 1080
 MODEL_HEIGHT = 450
 MODEL_WIDTH = 800
-TOTAL_ACTIONABLE_TIME = 120
+
 HP_CHART = {}
 with open('vigor_chart.csv', 'r') as v_chart:
     for line in v_chart.readlines():
