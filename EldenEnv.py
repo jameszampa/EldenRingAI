@@ -105,6 +105,7 @@ class EldenEnv(gym.Env):
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
+                self.reward = -1000
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
