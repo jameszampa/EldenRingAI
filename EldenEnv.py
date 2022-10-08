@@ -35,7 +35,7 @@ IMG_WIDTH = 1920
 IMG_HEIGHT = 1080
 MODEL_HEIGHT = 450
 MODEL_WIDTH = 800
-
+TOTAL_ACTIONABLE_TIME = 120
 HP_CHART = {}
 with open('vigor_chart.csv', 'r') as v_chart:
     for line in v_chart.readlines():
@@ -100,7 +100,7 @@ class EldenEnv(gym.Env):
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
-            if (time.time() - self.t_start) > 120:
+            if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True

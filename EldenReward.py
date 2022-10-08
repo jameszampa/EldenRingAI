@@ -4,7 +4,7 @@ import numpy as np
 import pytesseract
 import time
 import requests
-
+from EldenEnv import TOTAL_ACTIONABLE_TIME
 
 HP_CHART = {}
 with open('vigor_chart.csv', 'r') as v_chart:
@@ -34,6 +34,7 @@ class EldenReward:
         self.death_ratio = 0.11
 
         self.time_since_death = None
+        self.time_since_seen_boss = None
 
         self.death = False
         self.curr_boss_hp = None
@@ -92,26 +93,26 @@ class EldenReward:
 
         
     def update(self, frame):
-        self.previous_runes_held = self.current_runes_held
-        try:
-            self.current_runes_held = self._get_runes_held(frame)
-        except:
-            pass
+        # self.previous_runes_held = self.current_runes_held
+        # try:
+        #     self.current_runes_held = self._get_runes_held(frame)
+        # except:
+        #     pass
         
-        if not self.previous_runes_held is None and not self.current_runes_held is None:
-            runes_reward = self.current_runes_held - self.previous_runes_held
-        else:
-            runes_reward = 0
+        # if not self.previous_runes_held is None and not self.current_runes_held is None:
+        #     runes_reward = self.current_runes_held - self.previous_runes_held
+        # else:
+        #     runes_reward = 0
 
         if self.curr_hp is None:
             self.curr_hp = self.max_hp
         stat_reward = 0
-        if not self.previous_stats is None and not self.current_stats is None:
-            if runes_reward < 0:
-                self._request_stats()
-                for i, stat in enumerate(self.current_stats):
-                    if self.current_stats[i] != self.previous_stats[i]:
-                        stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
+        # if not self.previous_stats is None and not self.current_stats is None:
+        #     if runes_reward < 0:
+                # self._request_stats()
+                # for i, stat in enumerate(self.current_stats):
+                #     if self.current_stats[i] != self.previous_stats[i]:
+                #         stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
         
         hp_reward = 0
         if not self.death:
@@ -139,11 +140,11 @@ class EldenReward:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
 
-        if hp_reward < 0:
-            hp_reward /= 2
-
         if self.death:
-            hp_reward = -250
+            time_alive = time.time() - self.time_since_death
+            if time_alive > TOTAL_ACTIONABLE_TIME:
+                time_alive = TOTAL_ACTIONABLE_TIME
+            hp_reward = -((TOTAL_ACTIONABLE_TIME - (time_alive)) / TOTAL_ACTIONABLE_TIME) * 100
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
@@ -158,14 +159,22 @@ class EldenReward:
         boss_name = self._get_boss_name(frame)
         boss_dmg_reward = 0
         boss_find_reward = 0
+        boss_timeout = 2.5
         # set_hp = False
         if not boss_name is None and 'Tree Sentinel' in boss_name:
             self.seen_boss = True
-            boss_find_reward = 1000
+            self.time_since_seen_boss = time.time()
+        
+        if (time.time() - self.time_since_seen_boss) < boss_timeout:
+            time_since_boss = time.time() - self.time_since_seen_boss
+            if time_since_boss < boss_timeout:
+                boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+            else:
+                boss_find_reward = -time_since_boss * 25
+            
             try:
                 boss_dmg_reward = self._get_boss_dmg(frame) * 10000
             except:
                 pass
-            
 
         return 0, 0, 0, self.death, boss_dmg_reward, boss_find_reward
