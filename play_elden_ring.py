@@ -25,10 +25,10 @@ elden_agent = EldenAgent()
 def focus_window():
     if request.method == 'POST':
         try:
-            print('FOCUS WINDOW')
-            elden_agent.w = WindowMgr()
-            elden_agent.w.find_window_wildcard('ELDEN RING.*')
-            elden_agent.w.set_foreground()
+            print('FOCUS WINDOW(Do Nothing)')
+            # elden_agent.w = WindowMgr()
+            # elden_agent.w.find_window_wildcard('ELDEN RING.*')
+            # elden_agent.w.set_foreground()
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
