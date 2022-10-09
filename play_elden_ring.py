@@ -63,6 +63,20 @@ def focus_window():
                 elden_agent.keyboard.release('e')
 
                 time.sleep(30)
+                press_q = True
+                for i in range(15):
+                    if press_q:
+                        elden_agent.keyboard.press("q")
+                        time.sleep(0.05)
+                        elden_agent.keyboard.release("q")
+                        press_q = False
+                    else:
+                        elden_agent.keyboard.press("e")
+                        time.sleep(0.05)
+                        elden_agent.keyboard.release("e")
+                        press_q = True
+                    time.sleep(1)
+                time.sleep(30)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
