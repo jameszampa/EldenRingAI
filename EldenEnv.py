@@ -7,7 +7,7 @@ import subprocess
 import numpy as np
 import pytesseract
 from gym import spaces
-
+from tensorboardX import SummaryWriter
 from EldenReward import EldenReward
 TOTAL_ACTIONABLE_TIME = 120
 
@@ -49,7 +49,7 @@ with open('vigor_chart.csv', 'r') as v_chart:
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self):
+    def __init__(self, logdir):
         super(EldenEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -63,6 +63,7 @@ class EldenEnv(gym.Env):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
         self.agent_ip = '192.168.4.70'
+        self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
 
         ret, _ = self.cap.read()
         if not ret:
@@ -83,6 +84,7 @@ class EldenEnv(gym.Env):
         self.death = False
         self.t_start = None
         self.done = False
+        self.iteration = 0
 
 
     def step(self, action):
@@ -117,7 +119,9 @@ class EldenEnv(gym.Env):
             
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
-        
+        self.iteration += 1
+        self.logger.add_scalar('reward', self.reward, self.iteration)
+
         return observation, self.reward, self.done, info
     
     def reset(self):

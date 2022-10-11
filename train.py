@@ -14,7 +14,7 @@ if not os.path.exists(models_dir):
 if not os.path.exists(logdir):
 	os.makedirs(logdir)
 
-env = EldenEnv()
+env = EldenEnv(logdir)
 env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
