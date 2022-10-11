@@ -4,8 +4,8 @@ import numpy as np
 import pytesseract
 import time
 import requests
-from EldenEnv import TOTAL_ACTIONABLE_TIME
 
+TOTAL_ACTIONABLE_TIME = 120
 HP_CHART = {}
 with open('vigor_chart.csv', 'r') as v_chart:
     for line in v_chart.readlines():

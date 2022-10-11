@@ -7,9 +7,9 @@ import subprocess
 import numpy as np
 import pytesseract
 from gym import spaces
-TOTAL_ACTIONABLE_TIME = 120
-from EldenReward import EldenReward
 
+from EldenReward import EldenReward
+TOTAL_ACTIONABLE_TIME = 120
 
 DISCRETE_ACTIONS = {'w': 'run_forwards',
                     's': 'run_backwards',
@@ -135,8 +135,28 @@ class EldenEnv(gym.Env):
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             if "Next" in next_text:
                 reset += 1
-            time.sleep(1)
 
+            
+            lost_connection_image = frame[475:550, 675:1250]
+            lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
+            lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
+            lost_connection_words = ["connection", "ELDEN", "RING", "game", "server", "lost", "Returning", "title", "menu"]
+            for word in lost_connection_words:
+                if word in lost_connection_text:
+                    reset += 1
+                    break
+
+            revive_loc_img = frame[800:850, 800:1100]
+            revive_loc_img = cv2.resize(revive_loc_img, ((1100-800)*3, (850-800)*3))
+            revive_loc_text = pytesseract.image_to_string(revive_loc_img,  lang='eng',config='--psm 6 --oem 3')
+            revive_loc_words = ["Choose", "revival", "location"]
+            for word in revive_loc_words:
+                if word in revive_loc_text:
+                    reset += 1
+                    break
+            time.sleep(1)
+        
+        
         if reset >= 8:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)

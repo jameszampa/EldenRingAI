@@ -23,5 +23,5 @@ while True:
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
-    cv2.imshow('er', frame[840:860, 1410:1480])
+    cv2.imshow('er', frame[800:850, 800:1100])
     cv2.waitKey(1)
