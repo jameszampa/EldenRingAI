@@ -119,7 +119,7 @@ def death_reset():
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
-            time.sleep(32.5)
+            time.sleep(35)
             elden_agent.keyboard.press('w')
             time.sleep(10)
             elden_agent.keyboard.release('w')
@@ -235,7 +235,7 @@ def return_to_grace():
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
 
-            time.sleep(32.5)
+            time.sleep(35)
             elden_agent.keyboard.press('w')
             time.sleep(10)
             elden_agent.keyboard.release('w')
