@@ -123,10 +123,13 @@ class EldenEnv(gym.Env):
                     requests.post(f"http://{self.agent_ip}:6000/action/lock_on", headers=headers)
                     self.locked_on = True
 
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
-                time.sleep(0.25)
-                self.consecutive_deaths = 0
+                if action == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) < 0.75:
+                    pass
+                else:
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
+                    time.sleep(0.25)
+                    self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
             # if we load in and die with 5 seconds, restart game because we are frozen on a black screen
