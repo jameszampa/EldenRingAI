@@ -138,8 +138,7 @@ class EldenReward:
                     if p_count > 10:
                         self.prev_hp = self.curr_hp
                         self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
-                        self.logger.add_scalar('curr_hp', self.curr_hp, self.iteration)
-                        if not self.curr_hp is None:
+                        if not self.prev_hp is None and not self.curr_hp is None:
                             hp_reward = (self.curr_hp - self.prev_hp) * 10
                         break
             boss_name = self._get_boss_name(frame)
@@ -168,7 +167,7 @@ class EldenReward:
             # if p_count < 10:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
-
+        self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
         percent_through_fight_reward = (1 - (self.curr_boss_hp / self.boss_max_hp)) * 10000
 
         if not self.death and not self.curr_hp is None:
