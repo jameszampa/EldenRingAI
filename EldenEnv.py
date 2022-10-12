@@ -99,8 +99,8 @@ class EldenEnv(gym.Env):
         if not ret:
             raise ValueError("Unable to capture ELDENRING frame")
 
-        runes, stat, hp, self.death, dmg_reward, find_reward = self.rewardGen.update(frame)
-        self.reward = runes + stat + hp + dmg_reward + find_reward
+        runes, percent_through, hp, self.death, dmg_reward, find_reward = self.rewardGen.update(frame)
+        self.reward = runes + percent_through + hp + dmg_reward + find_reward
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)

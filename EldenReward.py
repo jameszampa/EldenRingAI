@@ -37,11 +37,12 @@ class EldenReward:
         self.time_since_seen_boss = time.time()
 
         self.death = False
-        self.curr_boss_hp = None
-        self.prev_boss_hp = None
+        self.curr_boss_hp = 3200
+        #self.prev_boss_hp = None
 
         self.agent_ip = '192.168.4.70'
         self._request_stats()
+        self.boss_max_hp = 3200
 
 
     def _request_stats(self):
@@ -148,16 +149,21 @@ class EldenReward:
                 time_since_boss = time.time() - self.time_since_seen_boss
                 if time_since_boss < boss_timeout:
                     boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+                    try:
+                        dmg = self._get_boss_dmg(frame)
+                        self.curr_boss_hp -= dmg
+                        boss_dmg_reward = dmg * 100
+                    except:
+                        pass
                 else:
                     boss_find_reward = -time_since_boss * 25
                 
-                try:
-                    boss_dmg_reward = self._get_boss_dmg(frame) * 100
-                except:
-                    pass
+                
             # if p_count < 10:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
+
+        percent_through_fight_reward = (1 - (self.curr_boss_hp / self.boss_max_hp)) * 10000
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
@@ -171,6 +177,6 @@ class EldenReward:
                 self.time_since_death = time.time()
                 self.curr_hp = self.max_hp
                 self.death = False
-                return 0, 0, hp_reward, True, boss_dmg_reward, boss_find_reward
+                return 0, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward
             else:
-                return 0, 0, hp_reward, self.death, boss_dmg_reward, boss_find_reward
+                return 0, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward
