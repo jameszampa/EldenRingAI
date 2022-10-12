@@ -111,7 +111,7 @@ class EldenEnv(gym.Env):
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
-            if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME:
+            if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
