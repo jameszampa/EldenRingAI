@@ -85,6 +85,7 @@ class EldenEnv(gym.Env):
         self.t_start = None
         self.done = False
         self.iteration = 0
+        self.first_step = False
 
 
     def step(self, action):
@@ -115,7 +116,7 @@ class EldenEnv(gym.Env):
         else:
             headers = {"Content-Type": "application/json"}
             # if we load in and die with 5 seconds, restart game because we are frozen on a black screen
-            if (time.time() - self.t_start) < 5:
+            if self.first_step:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
                 time.sleep(5 * 60)
@@ -137,6 +138,7 @@ class EldenEnv(gym.Env):
             
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
+        self.first_step = False
         self.iteration += 1
         self.logger.add_scalar('reward', self.reward, self.iteration)
 
@@ -199,6 +201,7 @@ class EldenEnv(gym.Env):
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.t_start = time.time()
         self.done = False
+        self.first_step = True
 
         return observation
 
