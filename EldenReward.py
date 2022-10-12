@@ -139,8 +139,8 @@ class EldenReward:
                         self.prev_hp = self.curr_hp
                         self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
                         self.logger.add_scalar('curr_hp', self.curr_hp, self.iteration)
-                        if not self.prev_hp is None and not self.curr_hp is None:
-                            hp_reward += (self.curr_hp - self.prev_hp)
+                        if not self.curr_hp is None:
+                            hp_reward = (self.curr_hp - self.prev_hp) * 10
                         break
             boss_name = self._get_boss_name(frame)
             boss_dmg_reward = 0
@@ -174,15 +174,12 @@ class EldenReward:
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
             time_alive = time.time() - self.time_since_death
-            if time_alive > TOTAL_ACTIONABLE_TIME:
-                time_alive = TOTAL_ACTIONABLE_TIME
-            if hp_reward == 0:
-                hp_reward = (time_alive / TOTAL_ACTIONABLE_TIME) * 10
+            time_alive_reward = (time_alive / TOTAL_ACTIONABLE_TIME) * 100
             if self.death:
                 hp_reward = -250
                 self.time_since_death = time.time()
                 self.curr_hp = self.max_hp
                 self.death = False
-                return 0, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
             else:
-                return 0, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
