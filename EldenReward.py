@@ -4,6 +4,8 @@ import numpy as np
 import pytesseract
 import time
 import requests
+import os
+from tensorboardX import SummaryWriter
 
 TOTAL_ACTIONABLE_TIME = 120
 HP_CHART = {}
@@ -15,7 +17,7 @@ with open('vigor_chart.csv', 'r') as v_chart:
 
 
 class EldenReward:
-    def __init__(self, char_slot) -> None:
+    def __init__(self, char_slot, logdir) -> None:
         self.previous_runes_held = None
         self.current_runes_held = None
 
@@ -43,6 +45,8 @@ class EldenReward:
         self.agent_ip = '192.168.4.70'
         self._request_stats()
         self.boss_max_hp = 3200
+        self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
+        self.iteration = 0
 
 
     def _request_stats(self):
@@ -94,6 +98,7 @@ class EldenReward:
 
         
     def update(self, frame):
+        self.iteration += 1
         # self.previous_runes_held = self.current_runes_held
         # try:
         #     self.current_runes_held = self._get_runes_held(frame)
@@ -133,6 +138,7 @@ class EldenReward:
                     if p_count > 10:
                         self.prev_hp = self.curr_hp
                         self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
+                        self.logger.add_scalar('curr_hp', self.curr_hp, self.iteration)
                         if not self.prev_hp is None and not self.curr_hp is None:
                             hp_reward += (self.curr_hp - self.prev_hp)
                         break
