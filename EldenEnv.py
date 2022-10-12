@@ -86,6 +86,7 @@ class EldenEnv(gym.Env):
         self.done = False
         self.iteration = 0
         self.first_step = False
+        self.consecutive_deaths = 0
 
 
     def step(self, action):
@@ -113,25 +114,29 @@ class EldenEnv(gym.Env):
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
                 time.sleep(0.25)
+                self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
             # if we load in and die with 5 seconds, restart game because we are frozen on a black screen
             if self.first_step:
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
-                time.sleep(5 * 60)
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
-                time.sleep(180)
+                self.consecutive_deaths += 1
+                if self.consecutive_deaths > 5:
+                    self.consecutive_deaths = 0
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
+                    time.sleep(5 * 60)
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
+                    time.sleep(180)
 
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
 
-                headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             else:
                 requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
             self.done = True
@@ -210,3 +215,8 @@ class EldenEnv(gym.Env):
 
     def close (self):
         self.cap.release()
+
+
+
+
+

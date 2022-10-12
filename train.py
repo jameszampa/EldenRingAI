@@ -5,8 +5,8 @@ import time
 
 
 
-models_dir = f"models/{int(time.time())}/"
-logdir = f"logs/{int(time.time())}/"
+models_dir = f"models/"
+logdir = f"logs/"
 
 if not os.path.exists(models_dir):
 	os.makedirs(models_dir)
