@@ -123,7 +123,7 @@ class EldenEnv(gym.Env):
                     requests.post(f"http://{self.agent_ip}:6000/action/lock_on", headers=headers)
                     self.locked_on = True
 
-                if action == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) < 0.75:
+                if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.75:
                     pass
                 else:
                     headers = {"Content-Type": "application/json"}
