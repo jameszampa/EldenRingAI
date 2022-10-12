@@ -4,9 +4,9 @@ from EldenEnv import EldenEnv
 import time
 
 
-
-models_dir = f"models/"
-logdir = f"logs/"
+ts = time.time()
+models_dir = f"models/{int(ts)}/"
+logdir = f"logs/{int(ts)}/"
 
 if not os.path.exists(models_dir):
 	os.makedirs(models_dir)
