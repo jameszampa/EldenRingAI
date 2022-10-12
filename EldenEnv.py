@@ -220,6 +220,7 @@ class EldenEnv(gym.Env):
         self.done = False
         self.first_step = True
         self.locked_on = False
+        self.rewardGen.curr_boss_hp = 3200
 
         return observation
 
