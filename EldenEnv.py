@@ -116,6 +116,7 @@ class EldenEnv(gym.Env):
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
                 self.reward = -10000000
+                self.rewardGen.time_since_death = time.time()
             else:
                 if not self.locked_on and time_since_boss_seen < 2.5:
                     headers = {"Content-Type": "application/json"}
