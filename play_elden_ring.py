@@ -261,6 +261,21 @@ def return_to_grace():
         return Response(status=400)
 
 
+@app.route('/action/lock_on', methods=["POST"])
+def lock_on():
+    if request.method == 'POST':
+        try:
+            print('LOCK ON TOGGLE')
+            elden_agent.keyboard.press('q')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('q')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
 @app.route('/action/stop_elden_ring', methods=["POST"])
 def stop_elden_ring():
     if request.method == 'POST':

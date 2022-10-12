@@ -87,6 +87,7 @@ class EldenEnv(gym.Env):
         self.iteration = 0
         self.first_step = False
         self.consecutive_deaths = 0
+        self.locked_on = False
 
 
     def step(self, action):
@@ -100,7 +101,7 @@ class EldenEnv(gym.Env):
         if not ret:
             raise ValueError("Unable to capture ELDENRING frame")
 
-        runes, percent_through, hp, self.death, dmg_reward, find_reward = self.rewardGen.update(frame)
+        runes, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
         self.reward = runes + percent_through + hp + dmg_reward + find_reward
 
         if not self.death:
@@ -111,6 +112,11 @@ class EldenEnv(gym.Env):
                 self.done = True
                 self.reward = -10000000
             else:
+                if not self.locked_on and time_since_boss_seen < 2.5:
+                    headers = {"Content-Type": "application/json"}
+                    requests.post(f"http://{self.agent_ip}:6000/action/lock_on", headers=headers)
+                    self.locked_on = True
+
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
                 time.sleep(0.25)
@@ -207,6 +213,7 @@ class EldenEnv(gym.Env):
         self.t_start = time.time()
         self.done = False
         self.first_step = True
+        self.locked_on = False
 
         return observation
 
