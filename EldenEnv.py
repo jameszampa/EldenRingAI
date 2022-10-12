@@ -102,6 +102,11 @@ class EldenEnv(gym.Env):
             raise ValueError("Unable to capture ELDENRING frame")
 
         runes, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
+        self.logger.add_scalar('runes', runes, self.iteration)
+        self.logger.add_scalar('percent_through', percent_through, self.iteration)
+        self.logger.add_scalar('hp', hp, self.iteration)
+        self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
+        self.logger.add_scalar('find_reward', find_reward, self.iteration)
         self.reward = runes + percent_through + hp + dmg_reward + find_reward
 
         if not self.death:
