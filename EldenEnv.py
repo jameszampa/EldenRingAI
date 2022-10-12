@@ -114,7 +114,25 @@ class EldenEnv(gym.Env):
                 time.sleep(0.25)
         else:
             headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+            # if we load in and die with 5 seconds, restart game because we are frozen on a black screen
+            if (time.time() - self.t_start) < 5:
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
+                time.sleep(5 * 60)
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
+                time.sleep(180)
+
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
+
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+            else:
+                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
             self.done = True
             
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
