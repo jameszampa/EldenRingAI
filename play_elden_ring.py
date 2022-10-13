@@ -32,9 +32,9 @@ def focus_window():
                 elden_agent.w.set_foreground()
             except Exception as e:
                 print("ERROR: Could not fild Elden Ring Restarting")
-                time.sleep(180)
+                time.sleep(60 * 5)
                 os.system("taskkill /f /im eldenring.exe")
-                time.sleep(180)
+                time.sleep(60 * 5)
                 subprocess.run([elden_agent.path_elden_ring])
                 time.sleep(180)
                 elden_agent.keyboard.release('w')
