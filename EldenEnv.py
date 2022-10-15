@@ -89,6 +89,7 @@ class EldenEnv(gym.Env):
         self.consecutive_deaths = 0
         self.locked_on = False
         self.num_runs = 0
+        self.max_reward = None
 
 
     def step(self, action):

@@ -90,7 +90,7 @@ class EldenReward:
     def _get_boss_dmg(self, frame):
         boss_dmg = frame[840:860, 1410:1480]
         boss_dmg = cv2.resize(boss_dmg, ((1480-1410)*3, (860-840)*3))
-        boss_dmg = pytesseract.image_to_string(boss_dmg,  lang='eng',config='--psm 6 --oem 3 -c tessedit_char_whitelist=0123456789')
+        boss_dmg = pytesseract.image_to_string(boss_dmg,  lang='eng',config='--psm 6 --oem 3')
         if boss_dmg != "":
             return int(boss_dmg)
         else:
