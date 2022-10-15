@@ -306,6 +306,8 @@ def tag_file(max_reward=None, iteration=None):
             max_ts = None
             file_to_rename = None
             vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
+            saved_runs_dir = r"E:\\Documents\\EldenRingAI\\saved_runs"
+            
             for file in os.listdir(vod_dir):
                 file_name = file.split(".")[0]
                 ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
@@ -317,7 +319,7 @@ def tag_file(max_reward=None, iteration=None):
                     file_to_rename = file
             
             source = os.path.join(vod_dir, file_to_rename)
-            dest = os.path.join(vod_dir, str(iteration) + "_" + str(max_reward) + '.mkv')
+            dest = os.path.join(saved_runs_dir, str(iteration) + "_" + str(max_reward) + '.mkv')
             shutil.move(source, dest)
             return Response(status=200)
         except Exception as e:
