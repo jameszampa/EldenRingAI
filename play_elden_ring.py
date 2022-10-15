@@ -269,7 +269,7 @@ def lock_on():
 
 
 @app.route('/recording/start', methods=["POST"])
-def lock_on():
+def start_recording():
     if request.method == 'POST':
         try:
             print('Start Recording')
@@ -284,7 +284,7 @@ def lock_on():
 
 
 @app.route('/recording/stop', methods=["POST"])
-def lock_on():
+def stop_recording():
     if request.method == 'POST':
         try:
             print('Stop Recording')
@@ -299,7 +299,7 @@ def lock_on():
 
 
 @app.route('/recording/tag_latest/<max_reward>/<iteration>', methods=["POST"])
-def lock_on(max_reward=None, iteration=None):
+def tag_file(max_reward=None, iteration=None):
     if request.method == 'POST':
         try:
             print('Renaming run')
