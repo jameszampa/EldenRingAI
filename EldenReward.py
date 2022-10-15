@@ -190,6 +190,8 @@ class EldenReward:
             boss_hp = 1
 
         percent_through_fight_reward = (1 - boss_hp) * 10000
+        self.logger.add_scalar('boss_hp', boss_hp, self.iteration)
+        
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
