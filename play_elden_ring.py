@@ -3,11 +3,15 @@ import json
 import time
 import secrets
 import subprocess
+
+from sklearn.metrics import max_error
 from get_levels import get_stats
 from pynput import keyboard as kb
 from WindowManager import WindowMgr
 from flask import Flask, request, Response
-
+import re
+import datetime
+import shutil
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -242,6 +246,79 @@ def return_to_grace():
             elden_agent.keyboard.press('w')
             time.sleep(2.5)
             elden_agent.keyboard.release('w')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/action/lock_on', methods=["POST"])
+def lock_on():
+    if request.method == 'POST':
+        try:
+            print('LOCK ON TOGGLE')
+            elden_agent.keyboard.press('q')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('q')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/start', methods=["POST"])
+def lock_on():
+    if request.method == 'POST':
+        try:
+            print('Start Recording')
+            elden_agent.keyboard.press('=')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('=')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/stop', methods=["POST"])
+def lock_on():
+    if request.method == 'POST':
+        try:
+            print('Stop Recording')
+            elden_agent.keyboard.press('-')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('-')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/tag_latest/<max_reward>/<iteration>', methods=["POST"])
+def lock_on(max_reward=None, iteration=None):
+    if request.method == 'POST':
+        try:
+            print('Renaming run')
+            max_ts = None
+            file_to_rename = None
+            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
+            for file in os.listdir(vod_dir):
+                file_name = file.split(".")[0]
+                ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
+                if max_ts is None:
+                    max_ts = ts
+                    file_to_rename = file
+                elif max_ts < ts:
+                    max_ts = ts
+                    file_to_rename = file
+            
+            source = os.path.join(vod_dir, file_to_rename)
+            dest = os.path.join(vod_dir, str(iteration) + "_" + str(max_reward) + '.mkv')
+            shutil.move(source, dest)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

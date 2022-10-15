@@ -162,11 +162,19 @@ class EldenEnv(gym.Env):
         self.iteration += 1
         self.logger.add_scalar('reward', self.reward, self.iteration)
 
+        if self.max_reward is None:
+            self.max_reward = self.reward
+        elif self.max_reward < self.reward:
+            self.max_reward = self.reward
+
         return observation, self.reward, self.done, info
     
     def reset(self):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
 
         # check frozen load screen
         reset = 0
@@ -218,13 +226,17 @@ class EldenEnv(gym.Env):
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
+
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
+
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.t_start = time.time()
         self.done = False
         self.first_step = True
         self.locked_on = False
         self.rewardGen.curr_boss_hp = 3200
-
+        self.max_reward = None
         return observation
 
     def render(self, mode='human'):
