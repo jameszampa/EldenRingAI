@@ -168,7 +168,28 @@ class EldenReward:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
         self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
-        percent_through_fight_reward = (1 - (self.curr_boss_hp / self.boss_max_hp)) * 10000
+        
+        if self.seen_boss:
+            boss_hp_image = frame[865:875, 465:1460]
+            p_count = 0
+            for i in range(int(1460 - 465)):
+                avg = 0
+                for j in range(10):
+                    r = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][0])
+                    g = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][1])
+                    b = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][2])
+                    avg = np.float64((r + g + b)) / 3
+                if (avg / 10) > 4:
+                    p_count += 1
+                if p_count > 15:
+                    boss_hp = ((1460 - 465 - 1) - i) / (1460 - 465)
+                    break
+            if p_count < 15:
+                boss_hp = 1
+        else:
+            boss_hp = 1
+
+        percent_through_fight_reward = (1 - boss_hp) * 10000
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
