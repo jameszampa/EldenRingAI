@@ -88,6 +88,7 @@ class EldenEnv(gym.Env):
         self.first_step = False
         self.consecutive_deaths = 0
         self.locked_on = False
+        self.num_runs = 0
 
 
     def step(self, action):
@@ -170,6 +171,7 @@ class EldenEnv(gym.Env):
         return observation, self.reward, self.done, info
     
     def reset(self):
+        self.num_runs += 1
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
@@ -226,6 +228,9 @@ class EldenEnv(gym.Env):
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
+
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
