@@ -243,6 +243,7 @@ class EldenEnv(gym.Env):
         self.locked_on = False
         self.rewardGen.curr_boss_hp = 3200
         self.max_reward = None
+        self.rewardGen.seen_boss = False
         return observation
 
     def render(self, mode='human'):
