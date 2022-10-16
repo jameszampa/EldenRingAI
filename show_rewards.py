@@ -24,24 +24,7 @@ while True:
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
-    # cv2.imshow('er', )
-    if rewardGen.seen_boss:
-        hp_image = frame[865:875, 465:1460]
-        p_count = 0
-        for i in range(int(1460 - 465)):
-            avg = 0
-            for j in range(10):
-                r = np.float64(hp_image[j, (1460 - 465 - 1) - i][0])
-                g = np.float64(hp_image[j, (1460 - 465 - 1) - i][1])
-                b = np.float64(hp_image[j, (1460 - 465 - 1) - i][2])
-                avg = np.float64((r + g + b)) / 3
-            if (avg / 10) > 4:
-                p_count += 1
-            if p_count > 15:
-                print(f'boss_hp: {(((1460 - 465 - 1) - i) / (1460 - 465))}')
-                break
-        if p_count < 15:
-            print('boss_hp:1')
-    else:
-        print('boss_hp : 1')
+    print(rewardGen.boss_hp)
+    if death:
+        time.sleep(15)
     #cv2.waitKey(1)

@@ -176,6 +176,7 @@ class EldenReward:
         self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
         
         if self.seen_boss:
+            boss_hp = 1
             boss_hp_image = frame[865:875, 465:1460]
             p_count = 0
             for i in range(int(1460 - 465)):
@@ -205,7 +206,10 @@ class EldenReward:
             self.boss_hp = boss_hp
             self.time_since_last_boss_hp_change = time.time()
 
-        percent_through_fight_reward = (1 - self.boss_hp) * 10000
+        if not self.death:
+            percent_through_fight_reward = (1 - self.boss_hp) * 10000
+        else:
+            percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
         
 
