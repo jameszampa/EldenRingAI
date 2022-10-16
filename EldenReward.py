@@ -175,7 +175,7 @@ class EldenReward:
             #     self.curr_hp = self.max_hp
         self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
         
-        if self.seen_boss:
+        if self.seen_boss and not self.death:
             boss_hp = 1
             boss_hp_image = frame[865:875, 465:1460]
             p_count = 0
@@ -189,7 +189,7 @@ class EldenReward:
                 if (avg / 10) > 4:
                     p_count += 1
                 if p_count > 15:
-                    if i <= 16:
+                    if i <= 25:
                         boss_hp = 1
                     else:
                         boss_hp = ((1460 - 465 - 1) - i) / (1460 - 465)
