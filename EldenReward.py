@@ -183,10 +183,13 @@ class EldenReward:
                 if (avg / 10) > 4:
                     p_count += 1
                 if p_count > 15:
-                    boss_hp = ((1460 - 465 - 1) - i) / (1460 - 465)
+                    if i <= 16:
+                        boss_hp = 1
+                    else:
+                        boss_hp = ((1460 - 465 - 1) - i) / (1460 - 465)
                     break
             if p_count < 15:
-                boss_hp = 1
+                boss_hp = 0
         else:
             boss_hp = 1
 
