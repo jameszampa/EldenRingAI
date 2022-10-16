@@ -200,7 +200,7 @@ class EldenReward:
         if self.boss_hp is None:
             self.boss_hp = 1
 
-        if abs(boss_hp - self.boss_hp) < 0.15:
+        if abs(boss_hp - self.boss_hp) < 0.08:
             self.boss_hp = boss_hp
 
         percent_through_fight_reward = (1 - self.boss_hp) * 10000
