@@ -49,6 +49,7 @@ class EldenReward:
         self.iteration = 0
         self.boss_hp = None
         self.time_since_last_hp_change = time.time()
+        self.time_since_last_boss_hp_change = time.time()
 
 
     def _request_stats(self):
@@ -200,8 +201,9 @@ class EldenReward:
         if self.boss_hp is None:
             self.boss_hp = 1
 
-        if abs(boss_hp - self.boss_hp) < 0.08:
+        if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
             self.boss_hp = boss_hp
+            self.time_since_last_boss_hp_change = time.time()
 
         percent_through_fight_reward = (1 - self.boss_hp) * 10000
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
