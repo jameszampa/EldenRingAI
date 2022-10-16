@@ -48,6 +48,7 @@ class EldenReward:
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
         self.iteration = 0
         self.boss_hp = None
+        self.time_since_last_hp_change = time.time()
 
 
     def _request_stats(self):
@@ -123,25 +124,28 @@ class EldenReward:
         
         hp_reward = 0
         if not self.death:
-            hp_image = frame[45:55, 155:155 + int(self.max_hp * self.hp_ratio)]
-            p_count = 0
-            for i in range(int(self.max_hp * self.hp_ratio)):
-                    avg = 0
-                    for j in range(10):
-                        r = np.float64(hp_image[j, i][0])
-                        g = np.float64(hp_image[j, i][1])
-                        b = np.float64(hp_image[j, i][2])
-                        avg = np.float64((r + g + b)) / 3
-                    if i > 2:
-                        if avg < 40:
-                            p_count += 1
-                    
-                    if p_count > 10:
-                        self.prev_hp = self.curr_hp
-                        self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
-                        if not self.prev_hp is None and not self.curr_hp is None:
-                            hp_reward = (self.curr_hp - self.prev_hp) * 10
-                        break
+            if self.time_since_last_hp_change > 1.0:
+                hp_image = frame[45:55, 155:155 + int(self.max_hp * self.hp_ratio)]
+                p_count = 0
+                for i in range(int(self.max_hp * self.hp_ratio)):
+                        avg = 0
+                        for j in range(10):
+                            r = np.float64(hp_image[j, i][0])
+                            g = np.float64(hp_image[j, i][1])
+                            b = np.float64(hp_image[j, i][2])
+                            avg = np.float64((r + g + b)) / 3
+                        if i > 2:
+                            if avg < 40:
+                                p_count += 1
+                        
+                        if p_count > 10:
+                            self.prev_hp = self.curr_hp
+                            self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
+                            if not self.prev_hp is None and not self.curr_hp is None:
+                                hp_reward = (self.curr_hp - self.prev_hp) * 10
+                                if hp_reward != 0:
+                                    self.time_since_last_hp_change = time.time()
+                            break
             boss_name = self._get_boss_name(frame)
             boss_dmg_reward = 0
             boss_find_reward = 0
@@ -216,6 +220,7 @@ class EldenReward:
                 self.curr_hp = self.max_hp
                 self.death = False
                 self.seen_boss = False
+                self.time_since_last_hp_change = time.time()
                 return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
             else:
                 return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
