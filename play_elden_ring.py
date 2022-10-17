@@ -119,6 +119,22 @@ def death_reset():
     if request.method == 'POST':
         try:
             print('DEATH RESET')
+            curr_reward = None
+            curr_resets = None
+            with open('obs_log.txt', 'r') as f:
+                for line in f.readlines():
+                    reward_match = re.search("Reward: (.+)", line)
+                    if not reward_match is None:
+                        curr_reward = float(reward_match[1])
+                    resets_match = re.search("Num resets: (.+)", line)
+                    if not resets_match is None:
+                        curr_resets = int(resets_match[1])
+            with open('obs_log.txt', 'w') as f:
+                f.write(f"Dead: {True}")
+                f.write("\n")
+                f.write("Reward: {:.2f}".format(curr_reward))
+                f.write("\n")
+                f.write(f"Num resets: {curr_resets}")
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
