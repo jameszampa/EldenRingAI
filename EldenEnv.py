@@ -174,7 +174,7 @@ class EldenEnv(gym.Env):
         json_message = {"death": self.death,
                         "reward": self.reward,
                         "num_run": self.num_runs}
-                        
+
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         return observation, self.reward, self.done, info
@@ -252,6 +252,7 @@ class EldenEnv(gym.Env):
         self.rewardGen.curr_boss_hp = 3200
         self.max_reward = None
         self.rewardGen.seen_boss = False
+        self.rewardGen.time_since_seen_boss = time.time()
         return observation
 
     def render(self, mode='human'):
