@@ -35,13 +35,14 @@ while True:
             g = np.float64(hp_image[j, i][1])
             b = np.float64(hp_image[j, i][2])
             avg = np.float64((r + g + b)) / 3
+        print(avg)
         if avg > 100:
             p_count += 1
         if p_count > 5:
             print("HP:", i / int(rewardGen.max_hp * rewardGen.hp_ratio))
             break
     if p_count < 5:
-        print("HP:", 1)
+        print("HP:", 0)
             
     
             

@@ -150,7 +150,7 @@ class EldenReward:
                         break
                 if p_count < 5:
                     self.prev_hp = self.curr_hp
-                    self.curr_hp = 1 * self.max_hp
+                    self.curr_hp = 0 * self.max_hp
                     if not self.prev_hp is None and not self.curr_hp is None:
                         hp_reward = (self.curr_hp - self.prev_hp) * 10
                         if hp_reward != 0:
