@@ -250,7 +250,7 @@ class EldenReward:
             if self.death:
                 hp_reward = -250
                 self.time_since_death = time.time()
-                self.curr_hp = self.max_hp
+                #self.curr_hp = self.max_hp
                 self.death = False
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
