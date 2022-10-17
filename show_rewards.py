@@ -27,4 +27,25 @@ while True:
     print(rewardGen.boss_hp)
     if death:
         time.sleep(15)
+    hp_image = frame[45:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio)]
+    end_leng = 155 + int(rewardGen.max_hp * rewardGen.hp_ratio)
+    p_count = 0
+    for i in range(int(rewardGen.max_hp * rewardGen.hp_ratio)):
+        avg = 0
+        for j in range(10):
+            r = np.float64(hp_image[j, i][0])
+            g = np.float64(hp_image[j, i][1])
+            b = np.float64(hp_image[j, i][2])
+            avg = np.float64((r + g + b)) / 3
+        if avg > 100:
+            p_count += 1
+        else:
+            p_count = 0
+        if p_count > 5:
+            print(i / int(rewardGen.max_hp * rewardGen.hp_ratio))
+            break
+    if p_count < 5:
+        print(0)
+    
+            
     #cv2.waitKey(1)
