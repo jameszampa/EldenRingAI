@@ -369,6 +369,26 @@ def release_keys():
         return Response(status=400)
 
 
+@app.route('/obs/log', methods=["POST"])
+def log_to_obs():
+    if request.method == 'POST':
+        try:
+            print('Log to OBS')
+            request_json = request.get_json(force=True)
+            with open('obs_log.txt', 'w') as f:
+                f.write(f"Dead: {request_json['death']}")
+                f.write("\n")
+                f.write("Reward: {:.2f}".format(float(request_json['reward'])))
+                f.write("\n")
+                f.write(f"Num resets: {request_json['num_run']}")
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+
 @app.route('/stats/<char_slot>', methods=["GET"])
 def request_stats(char_slot=None):
     if char_slot is None:
