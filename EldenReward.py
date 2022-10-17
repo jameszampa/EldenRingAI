@@ -50,6 +50,9 @@ class EldenReward:
         self.boss_hp = None
         self.time_since_last_hp_change = time.time()
         self.time_since_last_boss_hp_change = time.time()
+        self.boss_hp_history = []
+        self.boss_hp_target_range = 1.0
+        self.boss_hp_target_window = 200
 
 
     def _request_stats(self):
@@ -204,10 +207,26 @@ class EldenReward:
 
         if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
             self.boss_hp = boss_hp
+            self.boss_hp_history.append(self.boss_hp)
             self.time_since_last_boss_hp_change = time.time()
 
         if not self.death:
-            percent_through_fight_reward = (1 - self.boss_hp) * 10000
+            if len(self.boss_hp_history) >= self.boss_hp_target_window:
+                boss_max = None
+                boss_min = None
+                for i in range(self.boss_hp_target_window):
+                    if boss_max is None:
+                        boss_max = self.boss_hp_history[-(i + 1)]
+                    elif boss_max < self.boss_hp_history[-(i + 1)]:
+                        boss_max = self.boss_hp_history[-(i + 1)]
+                    if boss_min is None:
+                        boss_min = self.boss_hp_history[-(i + 1)]
+                    elif boss_min > self.boss_hp_history[-(i + 1)]:
+                        boss_min = self.boss_hp_history[-(i + 1)]
+                if abs(boss_max - boss_min) < self.boss_hp_target_range:
+                    percent_through_fight_reward = (1 - self.boss_hp) * 10000
+                else:
+                    percent_through_fight_reward = 0
         else:
             percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
@@ -227,6 +246,7 @@ class EldenReward:
                 self.death = False
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
+                self.boss_hp_history = []
                 return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
             else:
                 return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
