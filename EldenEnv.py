@@ -171,11 +171,12 @@ class EldenEnv(gym.Env):
         elif self.max_reward < self.reward:
             self.max_reward = self.reward
 
-        json_message = {"death": self.death,
-                        "reward": self.reward,
-                        "num_run": self.num_runs}
+        if not self.done:
+            json_message = {"death": self.death,
+                            "reward": self.reward,
+                            "num_run": self.num_runs}
 
-        requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
+            requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         return observation, self.reward, self.done, info
     
