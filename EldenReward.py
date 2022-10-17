@@ -209,7 +209,7 @@ class EldenReward:
             self.boss_hp = boss_hp
             self.boss_hp_history.append(self.boss_hp)
             self.time_since_last_boss_hp_change = time.time()
-
+        percent_through_fight_reward = 0
         if not self.death:
             if len(self.boss_hp_history) >= self.boss_hp_target_window:
                 boss_max = None
@@ -227,6 +227,8 @@ class EldenReward:
                     percent_through_fight_reward = (1 - self.boss_hp) * 10000
                 else:
                     percent_through_fight_reward = 0
+            else:
+                percent_through_fight_reward = 0
         else:
             percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
