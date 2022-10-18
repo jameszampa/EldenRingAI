@@ -31,7 +31,8 @@ for file in os.listdir(datasetdir):
         y.append(np.array([x1, y1, x2, y2]))
     else:
         y.append(np.array([0, 0, 0, 0]))
-    
+x = np.array(x)
+y = np.array(y)
 
 
 model.fit(x=x,
