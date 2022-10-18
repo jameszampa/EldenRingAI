@@ -2,3 +2,5 @@ __pycache__/*
 logs/*
 models/*
 vods/*
+tree_dataset/*
+tree_sentinel.mp4
