@@ -203,7 +203,7 @@ class EldenEnv(gym.Env):
             lost_connection_image = frame[475:550, 675:1250]
             lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
             lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
-            lost_connection_words = ["connection", "ELDEN", "RING", "game", "server", "lost", "Returning", "title", "menu"]
+            lost_connection_words = ["connection", "game", "server", "lost"]
             for word in lost_connection_words:
                 if word in lost_connection_text:
                     reset += 1
