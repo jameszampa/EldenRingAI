@@ -189,7 +189,7 @@ class EldenEnv(gym.Env):
 
         # check frozen load screen
         reset = 0
-        for i in range(10):
+        for i in range(15):
             ret, frame = self.cap.read()
             self.done = False
 
@@ -207,6 +207,7 @@ class EldenEnv(gym.Env):
             for word in lost_connection_words:
                 if word in lost_connection_text:
                     reset += 1
+                    break
 
             revive_loc_img = frame[800:850, 800:1100]
             revive_loc_img = cv2.resize(revive_loc_img, ((1100-800)*3, (850-800)*3))
@@ -215,10 +216,11 @@ class EldenEnv(gym.Env):
             for word in revive_loc_words:
                 if word in revive_loc_text:
                     reset += 1
+                    break
             time.sleep(1)
         
         
-        if reset >= 8:
+        if reset >= 12:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
