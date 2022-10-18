@@ -23,7 +23,7 @@ y = []
 for file in os.listdir(datasetdir):
     image = Image.open(os.path.join(datasetdir, file))
     np_image = np.asarray(image).astype(np.float32)
-    print(np_image.shape)
+    # print(np_image.shape)
     x.append(np_image)
     if not annotation_dict[file]['x1'] is None:
         shape = x[-1].shape
