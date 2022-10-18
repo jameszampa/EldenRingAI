@@ -53,6 +53,8 @@ class EldenReward:
         self.boss_hp_history = []
         self.boss_hp_target_range = 1.0
         self.boss_hp_target_window = 200
+        self.time_till_fight = 120
+        self.time_since_reset = time.time()
 
 
     def _request_stats(self):
@@ -162,13 +164,18 @@ class EldenReward:
             boss_timeout = 2.5
             # set_hp = False
             if not boss_name is None and 'Tree Sentinel' in boss_name:
+                if not self.seen_boss:
+                    self.time_till_fight = 1 - ((time.time() - self.time_since_reset) / TOTAL_ACTIONABLE_TIME)
                 self.seen_boss = True
                 self.time_since_seen_boss = time.time()
             
             if not self.time_since_seen_boss is None:
                 time_since_boss = time.time() - self.time_since_seen_boss
                 if time_since_boss < boss_timeout:
-                    boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+                    if not self.seen_boss:
+                        boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+                    else:
+                        boss_find_reward = self.time_till_fight * 1000
                     try:
                         dmg = self._get_boss_dmg(frame)
                         self.curr_boss_hp -= dmg

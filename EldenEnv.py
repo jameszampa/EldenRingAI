@@ -253,6 +253,7 @@ class EldenEnv(gym.Env):
         self.rewardGen.time_since_seen_boss = time.time()
         self.rewardGen.prev_hp = self.rewardGen.max_hp
         self.rewardGen.curr_hp = self.rewardGen.max_hp
+        self.rewardGen.time_since_reset = time.time()
 
         return observation
 
