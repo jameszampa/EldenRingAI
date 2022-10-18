@@ -11,8 +11,10 @@ print(len(os.listdir(datasetdir)))
 
 image = tf.keras.Input(shape=[224, 224, 3], name='image')
 backbone = tf.keras.applications.MobileNetV2(input_shape=[224, 224, 3], include_top=False)(image)
-output = tf.keras.layers.Dense(4)(backbone)
+flatten = tf.keras.layers.Flatten()(backbone)
+output = tf.keras.layers.Dense(4)(flatten)
 model = tf.keras.Model(inputs=image, outputs=output)
+
 model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer='adam')
 annotation_dict = {}
 with open('tree_dataset.json', 'r') as f:
