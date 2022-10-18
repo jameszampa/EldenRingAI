@@ -33,7 +33,8 @@ for file in os.listdir(datasetdir):
         y.append(np.array([0, 0, 0, 0]).astype(np.float32))
 x = np.array(x)
 y = np.array(y)
-
+print(x.shape)
+print(y.shape)
 
 model.fit(x=x,
           y=y,
