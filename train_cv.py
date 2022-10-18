@@ -13,7 +13,7 @@ image = tf.keras.Input(shape=[None, None, 3], name='image')
 backbone = tf.keras.applications.MobileNetV2(input_shape=[None, None, 3], include_top=False)(image)
 output = tf.keras.layers.Dense(4)(backbone)
 model = tf.keras.Model(inputs=image, outputs=output)
-model.compile(loss=tf.keras.losses.BinaryCrossentropy, optimizer='adam')
+model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy, optimizer='adam')
 annotation_dict = {}
 with open('tree_dataset.json', 'r') as f:
     annotation_dict = json.loads(f.read())
@@ -35,7 +35,7 @@ for file in os.listdir(datasetdir):
 
     frame = cv2.resize(frame, (1280, 720))
     x.append(np.asarray(frame))
-    
+
 x = np.array(x)
 y = np.array(y)
 print(x.shape)
