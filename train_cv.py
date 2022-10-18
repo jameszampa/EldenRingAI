@@ -21,12 +21,10 @@ with open('tree_dataset.json', 'r') as f:
 x = []
 y = []
 for file in os.listdir(datasetdir):
-    image = Image.open(os.path.join(datasetdir, file))
-    np_image = np.asarray(image).astype(np.float32)
-    # print(np_image.shape)
-    x.append(np_image)
+    frame = cv2.imread(os.path.join(datasetdir, file))
+    
     if not annotation_dict[file]['x1'] is None:
-        shape = x[-1].shape
+        shape = frame.shape
         x1 = float(annotation_dict[file]['x1']) / shape[1]
         y1 = float(annotation_dict[file]['y1']) / shape[0]
         x2 = float(annotation_dict[file]['x2']) / shape[1]
@@ -34,6 +32,10 @@ for file in os.listdir(datasetdir):
         y.append(np.array([x1, y1, x2, y2]).astype(np.float32))
     else:
         y.append(np.array([0, 0, 0, 0]).astype(np.float32))
+
+    frame = cv2.resize(frame, (1280, 720))
+    x.append(np.asarray(frame))
+    
 x = np.array(x)
 y = np.array(y)
 print(x.shape)
