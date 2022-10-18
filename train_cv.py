@@ -1,5 +1,5 @@
 import os
-from pickletools import optimize
+from PIL import Image
 import cv2
 import json
 import numpy as np
@@ -21,8 +21,8 @@ with open('tree_dataset.json', 'r') as f:
 x = []
 y = []
 for file in os.listdir(datasetdir):
-    frame = cv2.imread(os.path.join(datasetdir, file))
-    x.append(np.asarray(frame))
+    image  = Image.open(os.path.join(datasetdir, file))
+    x.append(np.array(image).astype(np.float32))
     if not annotation_dict[file]['x1'] is None:
         shape = x[-1].shape
         x1 = float(annotation_dict[file]['x1']) / shape[1]
