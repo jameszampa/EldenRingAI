@@ -2,6 +2,7 @@ import cv2
 from EldenReward import EldenReward
 import time
 import numpy as np
+import pytesseract
 
 cap = cv2.VideoCapture('/dev/video0')
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
@@ -25,25 +26,10 @@ while True:
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
     print(rewardGen.boss_hp)
-    hp_image = frame[45:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio)]
-    end_leng = 155 + int(rewardGen.max_hp * rewardGen.hp_ratio)
-    p_count = 0
-    for i in range(int(rewardGen.max_hp * rewardGen.hp_ratio)):
-        avg = 0
-        for j in range(10):
-            r = np.float64(hp_image[j, i][0])
-            g = np.float64(hp_image[j, i][1])
-            b = np.float64(hp_image[j, i][2])
-            avg = np.float64((r + g + b)) / 3
-        print(avg)
-        if avg > 100:
-            p_count += 1
-        if p_count > 5:
-            print("HP:", i / int(rewardGen.max_hp * rewardGen.hp_ratio))
-            break
-    if p_count < 5:
-        print("HP:", 0)
-            
+    lost_connection_image = frame[475:550, 675:1250]
+    lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
+    lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
+    print(lost_connection_text)
     
             
     #cv2.waitKey(1)

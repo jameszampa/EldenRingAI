@@ -166,17 +166,16 @@ class EldenEnv(gym.Env):
         self.iteration += 1
         self.logger.add_scalar('reward', self.reward, self.iteration)
 
-        if self.max_reward is None:
-            self.max_reward = self.reward
-        elif self.max_reward < self.reward:
-            self.max_reward = self.reward
-
         if not self.done:
             json_message = {"death": self.death,
                             "reward": self.reward,
                             "num_run": self.num_runs}
 
             requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
+            if self.max_reward is None:
+                self.max_reward = self.reward
+            elif self.max_reward < self.reward:
+                self.max_reward = self.reward
 
         return observation, self.reward, self.done, info
     
@@ -200,7 +199,7 @@ class EldenEnv(gym.Env):
             if "Next" in next_text:
                 reset += 1
 
-            
+            # This didnt work :(
             lost_connection_image = frame[475:550, 675:1250]
             lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
             lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
@@ -254,6 +253,9 @@ class EldenEnv(gym.Env):
         self.max_reward = None
         self.rewardGen.seen_boss = False
         self.rewardGen.time_since_seen_boss = time.time()
+        self.rewardGen.prev_hp = None
+        self.rewardGen.curr_hp = None
+
         return observation
 
     def render(self, mode='human'):
