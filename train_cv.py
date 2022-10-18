@@ -1,4 +1,5 @@
 import os
+from pickletools import optimize
 import cv2
 import json
 import numpy as np
@@ -12,7 +13,7 @@ image = tf.keras.Input(shape=[None, None, 3], name='image')
 backbone = tf.keras.applications.MobileNetV2(input_shape=[None, None, 3], include_top=False)(image)
 output = tf.keras.layers.Dense(4)(backbone)
 model = tf.keras.Model(inputs=image, outputs=output)
-
+model.compile(loss=tf.keras.losses.BinaryCrossentropy, optimizer='adam')
 annotation_dict = {}
 with open('tree_dataset.json', 'r') as f:
     annotation_dict = json.loads(f.read())
