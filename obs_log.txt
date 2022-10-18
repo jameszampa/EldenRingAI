@@ -1,0 +1,3 @@
+Dead: False
+Reward: -2575.61
+Num resets: 8

@@ -4,3 +4,4 @@ models/*
 vods/*
 tree_dataset/*
 tree_sentinel.mp4
+saved_runs/*

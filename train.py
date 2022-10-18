@@ -4,9 +4,9 @@ from EldenEnv import EldenEnv
 import time
 
 
-
-models_dir = f"models/{int(time.time())}/"
-logdir = f"logs/{int(time.time())}/"
+ts = time.time()
+models_dir = f"models/{int(ts)}/"
+logdir = f"logs/{int(ts)}/"
 
 if not os.path.exists(models_dir):
 	os.makedirs(models_dir)
@@ -14,7 +14,7 @@ if not os.path.exists(models_dir):
 if not os.path.exists(logdir):
 	os.makedirs(logdir)
 
-env = EldenEnv()
+env = EldenEnv(logdir)
 env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)

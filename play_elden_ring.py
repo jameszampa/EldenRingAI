@@ -3,11 +3,15 @@ import json
 import time
 import secrets
 import subprocess
+
+from sklearn.metrics import max_error
 from get_levels import get_stats
 from pynput import keyboard as kb
 from WindowManager import WindowMgr
 from flask import Flask, request, Response
-
+import re
+import datetime
+import shutil
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -32,9 +36,9 @@ def focus_window():
                 elden_agent.w.set_foreground()
             except Exception as e:
                 print("ERROR: Could not fild Elden Ring Restarting")
-                time.sleep(180)
+                time.sleep(60 * 5)
                 os.system("taskkill /f /im eldenring.exe")
-                time.sleep(180)
+                time.sleep(60 * 5)
                 subprocess.run([elden_agent.path_elden_ring])
                 time.sleep(180)
                 elden_agent.keyboard.release('w')
@@ -62,6 +66,20 @@ def focus_window():
                 time.sleep(0.1)
                 elden_agent.keyboard.release('e')
 
+                time.sleep(30)
+                press_q = True
+                for i in range(15):
+                    if press_q:
+                        elden_agent.keyboard.press("q")
+                        time.sleep(0.05)
+                        elden_agent.keyboard.release("q")
+                        press_q = False
+                    else:
+                        elden_agent.keyboard.press("e")
+                        time.sleep(0.05)
+                        elden_agent.keyboard.release("e")
+                        press_q = True
+                    time.sleep(1)
                 time.sleep(30)
             return Response(status=200)
         except Exception as e:
@@ -101,11 +119,36 @@ def death_reset():
     if request.method == 'POST':
         try:
             print('DEATH RESET')
+            curr_reward = None
+            curr_resets = None
+            with open('obs_log.txt', 'r') as f:
+                for line in f.readlines():
+                    reward_match = re.search("Reward: (.+)", line)
+                    if not reward_match is None:
+                        curr_reward = float(reward_match[1])
+                    resets_match = re.search("Num resets: (.+)", line)
+                    if not resets_match is None:
+                        curr_resets = int(resets_match[1])
+            with open('obs_log.txt', 'w') as f:
+                f.write(f"Dead: {True}")
+                f.write("\n")
+                f.write("Reward: {:.2f}".format(curr_reward))
+                f.write("\n")
+                f.write(f"Num resets: {curr_resets}")
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
-            time.sleep(30)
+            time.sleep(40)
+            elden_agent.keyboard.press('w')
+            time.sleep(10)
+            elden_agent.keyboard.release('w')
+            elden_agent.keyboard.press('d')
+            time.sleep(2)
+            elden_agent.keyboard.release('d')
+            elden_agent.keyboard.press('w')
+            time.sleep(2.5)
+            elden_agent.keyboard.release('w')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -209,8 +252,91 @@ def return_to_grace():
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
 
-            time.sleep(30)
+            time.sleep(40)
             elden_agent.keyboard.press('w')
+            time.sleep(10)
+            elden_agent.keyboard.release('w')
+            elden_agent.keyboard.press('d')
+            time.sleep(2)
+            elden_agent.keyboard.release('d')
+            elden_agent.keyboard.press('w')
+            time.sleep(2.5)
+            elden_agent.keyboard.release('w')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/action/lock_on', methods=["POST"])
+def lock_on():
+    if request.method == 'POST':
+        try:
+            print('LOCK ON TOGGLE')
+            elden_agent.keyboard.press('q')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('q')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/start', methods=["POST"])
+def start_recording():
+    if request.method == 'POST':
+        try:
+            print('Start Recording')
+            elden_agent.keyboard.press('=')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('=')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/stop', methods=["POST"])
+def stop_recording():
+    if request.method == 'POST':
+        try:
+            print('Stop Recording')
+            elden_agent.keyboard.press('-')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('-')
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/recording/tag_latest/<max_reward>/<iteration>', methods=["POST"])
+def tag_file(max_reward=None, iteration=None):
+    if request.method == 'POST':
+        try:
+            print('Renaming run')
+            max_ts = None
+            file_to_rename = None
+            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
+            saved_runs_dir = r"E:\\Documents\\EldenRingAI\\saved_runs"
+            
+            for file in os.listdir(vod_dir):
+                file_name = file.split(".")[0]
+                ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
+                if max_ts is None:
+                    max_ts = ts
+                    file_to_rename = file
+                elif max_ts < ts:
+                    max_ts = ts
+                    file_to_rename = file
+            
+            source = os.path.join(vod_dir, file_to_rename)
+            dest = os.path.join(saved_runs_dir, str(iteration) + "_" + str(max_reward) + '.mkv')
+            shutil.move(source, dest)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -257,6 +383,26 @@ def release_keys():
             return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
+
+
+@app.route('/obs/log', methods=["POST"])
+def log_to_obs():
+    if request.method == 'POST':
+        try:
+            print('Log to OBS')
+            request_json = request.get_json(force=True)
+            with open('obs_log.txt', 'w') as f:
+                f.write(f"Dead: {request_json['death']}")
+                f.write("\n")
+                f.write("Reward: {:.2f}".format(float(request_json['reward'])))
+                f.write("\n")
+                f.write(f"Num resets: {request_json['num_run']}")
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
 
 
 @app.route('/stats/<char_slot>', methods=["GET"])
