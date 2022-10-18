@@ -251,8 +251,8 @@ class EldenEnv(gym.Env):
         self.max_reward = None
         self.rewardGen.seen_boss = False
         self.rewardGen.time_since_seen_boss = time.time()
-        self.rewardGen.prev_hp = None
-        self.rewardGen.curr_hp = None
+        self.rewardGen.prev_hp = self.rewardGen.max_hp
+        self.rewardGen.curr_hp = self.rewardGen.max_hp
 
         return observation
 
