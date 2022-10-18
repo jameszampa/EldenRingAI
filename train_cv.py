@@ -34,7 +34,7 @@ for file in os.listdir(datasetdir):
         y.append(np.array([0, 0, 0, 0]).astype(np.float32))
 
     frame = cv2.resize(frame, (1280, 720))
-    x.append(np.asarray(frame))
+    x.append(np.asarray(frame).astype(np.float32))
 
 x = np.array(x)
 y = np.array(y)
