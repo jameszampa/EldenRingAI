@@ -9,8 +9,8 @@ import tensorflow as tf
 datasetdir = 'tree_dataset'
 print(len(os.listdir(datasetdir)))
 
-image = tf.keras.Input(shape=[None, None, 3], name='image')
-backbone = tf.keras.applications.MobileNetV2(input_shape=[None, None, 3], include_top=False)(image)
+image = tf.keras.Input(shape=[224, 224, 3], name='image')
+backbone = tf.keras.applications.MobileNetV2(input_shape=[224, 224, 3], include_top=False)(image)
 output = tf.keras.layers.Dense(4)(backbone)
 model = tf.keras.Model(inputs=image, outputs=output)
 model.compile(loss=tf.keras.losses.CategoricalCrossentropy(), optimizer='adam')
@@ -33,7 +33,7 @@ for file in os.listdir(datasetdir):
     else:
         y.append(np.array([0, 0, 0, 0]).astype(np.float32))
 
-    frame = cv2.resize(frame, (1280, 720))
+    frame = cv2.resize(frame, (224, 224))
     x.append(np.asarray(frame).astype(np.float32))
 
 x = np.array(x)
