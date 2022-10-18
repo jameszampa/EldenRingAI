@@ -207,7 +207,6 @@ class EldenEnv(gym.Env):
             for word in lost_connection_words:
                 if word in lost_connection_text:
                     reset += 1
-                    break
 
             revive_loc_img = frame[800:850, 800:1100]
             revive_loc_img = cv2.resize(revive_loc_img, ((1100-800)*3, (850-800)*3))
@@ -216,7 +215,6 @@ class EldenEnv(gym.Env):
             for word in revive_loc_words:
                 if word in revive_loc_text:
                     reset += 1
-                    break
             time.sleep(1)
         
         
