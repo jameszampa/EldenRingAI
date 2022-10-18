@@ -21,9 +21,10 @@ with open('tree_dataset.json', 'r') as f:
 x = []
 y = []
 for file in os.listdir(datasetdir):
-    #image  = Image.open()
-    print(os.path.join(datasetdir, file))
-    x.append(np.array(image).astype(np.float32))
+    image = Image.open(os.path.join(datasetdir, file))
+    np_image = np.asarray(image).astype(np.float32)
+    print(np_image.shape)
+    x.append(np_image)
     if not annotation_dict[file]['x1'] is None:
         shape = x[-1].shape
         x1 = float(annotation_dict[file]['x1']) / shape[1]
