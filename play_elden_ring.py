@@ -25,17 +25,24 @@ app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
 elden_agent = EldenAgent()
 
 
+def update_status(text):
+    with open('status.txt', 'w') as f:
+        f.write(text)
+
+
 @app.route('/action/focus_window', methods=["POST"])
 def focus_window():
     if request.method == 'POST':
         try:
             print('FOCUS WINDOW(Do Nothing)')
             try:
+                update_status('Focusing window')
                 elden_agent.w = WindowMgr()
                 elden_agent.w.find_window_wildcard('ELDEN RING.*')
                 elden_agent.w.set_foreground()
             except Exception as e:
                 print("ERROR: Could not fild Elden Ring Restarting")
+                update_status('Could not fild Elden Ring restarting')
                 time.sleep(60 * 5)
                 os.system("taskkill /f /im eldenring.exe")
                 time.sleep(60 * 5)
@@ -93,6 +100,7 @@ def load_save():
     if request.method == 'POST':
         try:
             print('LOAD SAVE')
+            update_status('Loading save file')
             press_q = True
             for i in range(15):
                 if press_q:
@@ -119,6 +127,7 @@ def death_reset():
     if request.method == 'POST':
         try:
             print('DEATH RESET')
+            update_status('Death reset')
             curr_reward = None
             curr_resets = None
             with open('obs_log.txt', 'r') as f:
@@ -162,6 +171,7 @@ def custom_action(action):
         try:
             print('CUSTOM ACTION')
             action = int(action)
+            update_status(f'Custom action: {action}')
             if action == 0:
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
@@ -227,6 +237,7 @@ def return_to_grace():
     if request.method == 'POST':
         try:
             print('RETURN TO GRACE')
+            update_status(f'Returning to grace')
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
@@ -273,10 +284,11 @@ def return_to_grace():
 def lock_on():
     if request.method == 'POST':
         try:
-            print('LOCK ON TOGGLE')
-            elden_agent.keyboard.press('q')
-            time.sleep(0.05)
-            elden_agent.keyboard.release('q')
+            #print('LOCK ON TOGGLE')
+            #update_status(f'Locking on')
+            #elden_agent.keyboard.press('q')
+            #time.sleep(0.05)
+            #elden_agent.keyboard.release('q')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -289,6 +301,7 @@ def init_fight():
     if request.method == 'POST':
         try:
             print('init fight')
+            update_status(f'Initializing fight')
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press('a')
             time.sleep(2)
@@ -296,7 +309,7 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             elden_agent.keyboard.press('w')
-            time.sleep(2)
+            time.sleep(4)
             elden_agent.keyboard.release('w')
 
             elden_agent.keyboard.press('q')
@@ -316,6 +329,7 @@ def start_recording():
     if request.method == 'POST':
         try:
             print('Start Recording')
+            update_status(f'Start recording')
             elden_agent.keyboard.press('=')
             time.sleep(0.05)
             elden_agent.keyboard.release('=')
@@ -331,6 +345,7 @@ def stop_recording():
     if request.method == 'POST':
         try:
             print('Stop Recording')
+            update_status(f'Stop recording')
             elden_agent.keyboard.press('-')
             time.sleep(0.05)
             elden_agent.keyboard.release('-')
@@ -346,6 +361,8 @@ def tag_file(max_reward=None, iteration=None):
     if request.method == 'POST':
         try:
             print('Renaming run')
+            update_status(f'Naming recorded run #{int(iteration)}')
+            
             max_ts = None
             file_to_rename = None
             vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
@@ -376,6 +393,7 @@ def stop_elden_ring():
     if request.method == 'POST':
         try:
             print('STOP ELDEN RING')
+            update_status(f'Stop Elden Ring')
             os.system("taskkill /f /im eldenring.exe")
             return Response(status=200)
         except Exception as e:
@@ -389,6 +407,8 @@ def start_elden_ring():
     if request.method == 'POST':
         try:
             print('START ELDEN RING')
+            update_status(f'Start Elden Ring')
+            
             subprocess.run([elden_agent.path_elden_ring])
             return Response(status=200)
         except Exception as e:
@@ -402,6 +422,8 @@ def release_keys():
     if request.method == 'POST':
         try:
             print('RELEASE KEYS')
+            update_status(f'Release keys')
+            
             for key in elden_agent.keys_pressed:
                 elden_agent.keyboard.release(key)
             elden_agent.keys_pressed = []
