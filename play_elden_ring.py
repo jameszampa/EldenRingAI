@@ -298,7 +298,7 @@ def init_fight():
             elden_agent.keyboard.press('w')
             time.sleep(2)
             elden_agent.keyboard.release('w')
-            
+
             elden_agent.keyboard.press('q')
             time.sleep(0.05)
             elden_agent.keyboard.release('q')
@@ -424,6 +424,8 @@ def log_to_obs():
                 f.write("Reward: {:.2f}".format(float(request_json['reward'])))
                 f.write("\n")
                 f.write(f"Num resets: {request_json['num_run']}")
+            with open('lowest_boss_hp.txt', 'w') as f:
+                f.write(f"{request_json['lowest_boss_hp']}")
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
