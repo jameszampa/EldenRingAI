@@ -74,6 +74,7 @@ class EldenReward:
                               stats['faith'],
                               stats['arcane']]
         self.max_hp = HP_CHART[self.current_stats[0]]
+        self.time_alive_multiplier = 1
 
 
     def _get_runes_held(self, frame):
@@ -147,7 +148,7 @@ class EldenReward:
                         self.prev_hp = self.curr_hp
                         self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
                         if not self.prev_hp is None and not self.curr_hp is None:
-                            hp_reward = (self.curr_hp - self.prev_hp) * 10
+                            hp_reward = (self.curr_hp - self.prev_hp) * 10000
                             if hp_reward != 0:
                                 self.time_since_last_hp_change = time.time()
                         break
@@ -155,7 +156,7 @@ class EldenReward:
                     self.prev_hp = self.curr_hp
                     self.curr_hp = 0 * self.max_hp
                     if not self.prev_hp is None and not self.curr_hp is None:
-                        hp_reward = (self.curr_hp - self.prev_hp) * 1000
+                        hp_reward = (self.curr_hp - self.prev_hp) * 10000
                         if hp_reward != 0:
                             self.time_since_last_hp_change = time.time()
 
@@ -239,6 +240,7 @@ class EldenReward:
                         boss_min = self.boss_hp_history[-(i + 1)]
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
                     percent_through_fight_reward = (1 - self.boss_hp) * 10000
+                    self.time_alive_multiplier = 1 - self.boss_hp
                     if self.boss_hp < self.min_boss_hp:
                         self.min_boss_hp = self.boss_hp
                 else:
@@ -253,7 +255,7 @@ class EldenReward:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
             time_alive = time.time() - self.time_since_death
             if self.seen_boss:
-                time_alive_reward = time_alive * 25
+                time_alive_reward = (time_alive * 10) * (self.time_alive_multiplier * 25)
             else:
                 time_alive_reward = 0
             if self.death:

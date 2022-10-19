@@ -36,7 +36,7 @@ def focus_window():
         try:
             print('FOCUS WINDOW(Do Nothing)')
             try:
-                update_status('Focusing window')
+                #update_status('Focusing window')
                 elden_agent.w = WindowMgr()
                 elden_agent.w.find_window_wildcard('ELDEN RING.*')
                 elden_agent.w.set_foreground()
