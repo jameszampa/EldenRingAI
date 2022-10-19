@@ -147,21 +147,13 @@ def death_reset():
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
-            time.sleep(40)
-            elden_agent.keyboard.press('w')
-            time.sleep(10)
-            elden_agent.keyboard.release('w')
-            elden_agent.keyboard.press('d')
-            time.sleep(2)
-            elden_agent.keyboard.release('d')
-            elden_agent.keyboard.press('w')
-            time.sleep(2.5)
-            elden_agent.keyboard.release('w')
+            time.sleep(15)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
+
 
 
 @app.route('/action/custom/<action>', methods=["POST"])
@@ -301,6 +293,16 @@ def init_fight():
         try:
             print('init fight')
             update_status(f'Initializing fight')
+            elden_agent.keyboard.press('w')
+            time.sleep(10)
+            elden_agent.keyboard.release('w')
+            elden_agent.keyboard.press('d')
+            time.sleep(2)
+            elden_agent.keyboard.release('d')
+            elden_agent.keyboard.press('w')
+            time.sleep(2.5)
+            elden_agent.keyboard.release('w')
+
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press('a')
             time.sleep(2)
