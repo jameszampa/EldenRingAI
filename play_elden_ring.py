@@ -284,6 +284,29 @@ def lock_on():
         return Response(status=400)
 
 
+@app.route('/action/init_fight', methods=["POST"])
+def init_fight():
+    if request.method == 'POST':
+        try:
+            print('init fight')
+            elden_agent.keyboard.press('w')
+            elden_agent.keyboard.press('a')
+            time.sleep(2)
+            elden_agent.keyboard.release('w')
+            elden_agent.keyboard.release('a')
+
+            elden_agent.keyboard.press('q')
+            time.sleep(0.05)
+            elden_agent.keyboard.release('q')
+
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+
 @app.route('/recording/start', methods=["POST"])
 def start_recording():
     if request.method == 'POST':
