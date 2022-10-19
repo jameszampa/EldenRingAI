@@ -52,7 +52,7 @@ class EldenReward:
         self.time_since_last_boss_hp_change = time.time()
         self.boss_hp_history = []
         self.boss_hp_target_range = 1.0
-        self.boss_hp_target_window = 200
+        self.boss_hp_target_window = 150
         self.time_till_fight = 120
         self.time_since_reset = time.time()
         self.min_boss_hp = 1
@@ -176,7 +176,7 @@ class EldenReward:
                     if not self.seen_boss:
                         boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
                     else:
-                        boss_find_reward = self.time_till_fight * 1000
+                        boss_find_reward = self.time_till_fight * 100
                     try:
                         dmg = self._get_boss_dmg(frame)
                         self.curr_boss_hp -= dmg
@@ -239,7 +239,8 @@ class EldenReward:
                         boss_min = self.boss_hp_history[-(i + 1)]
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
                     percent_through_fight_reward = (1 - self.boss_hp) * 10000
-                    
+                    if self.boss_hp < self.min_boss_hp:
+                        self.min_boss_hp = self.boss_hp
                 else:
                     percent_through_fight_reward = 0
             else:
@@ -247,15 +248,12 @@ class EldenReward:
         else:
             percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
-        
-        if self.boss_hp < self.min_boss_hp:
-            self.min_boss_hp = self.boss_hp
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) < self.death_ratio
             time_alive = time.time() - self.time_since_death
             if self.seen_boss:
-                time_alive_reward = (time_alive / TOTAL_ACTIONABLE_TIME) * 100
+                time_alive_reward = time_alive * 25
             else:
                 time_alive_reward = 0
             if self.death:
