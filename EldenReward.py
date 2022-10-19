@@ -51,8 +51,8 @@ class EldenReward:
         self.time_since_last_hp_change = time.time()
         self.time_since_last_boss_hp_change = time.time()
         self.boss_hp_history = []
-        self.boss_hp_target_range = 1.0
-        self.boss_hp_target_window = 150
+        self.boss_hp_target_range = 10
+        self.boss_hp_target_window = 5
         self.time_till_fight = 120
         self.time_since_reset = time.time()
         self.min_boss_hp = 1
