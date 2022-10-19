@@ -425,7 +425,7 @@ def log_to_obs():
                 f.write("\n")
                 f.write(f"Num resets: {request_json['num_run']}")
             with open('lowest_boss_hp.txt', 'w') as f:
-                f.write(f"{request_json['lowest_boss_hp']}")
+                f.write(f"{float(request_json['lowest_boss_hp'])}")
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

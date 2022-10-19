@@ -47,7 +47,10 @@ class Bot(commands.Bot):
                 if not match is None:
                     num_run = int(match[1])
         with open('lowest_boss_hp.txt', 'r') as f:
-            lowest_boss_hp = int(float(f.read()) * 100)
+            try:
+                lowest_boss_hp = int(float(f.read()) * 100)
+            except:
+                lowest_boss_hp = 100
         await ctx.send('!title A.I. fights Tree Sentinel Attempt: {} Lowest Boss HP: {}% !code !highlight'.format(num_run, lowest_boss_hp))
     
 
