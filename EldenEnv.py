@@ -95,6 +95,10 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
+        json_message = {'text': 'Step'}
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
@@ -188,6 +192,9 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
 
+        json_message = {'text': 'Check for frozen screen'}
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
         # check frozen load screen
         reset = 0
         for i in range(15):

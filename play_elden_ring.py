@@ -171,7 +171,7 @@ def custom_action(action):
         try:
             print('CUSTOM ACTION')
             action = int(action)
-            update_status(f'Custom action: {action}')
+            #update_status(f'Custom action: {action}')
             if action == 0:
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
@@ -329,7 +329,7 @@ def start_recording():
     if request.method == 'POST':
         try:
             print('Start Recording')
-            update_status(f'Start recording')
+            #update_status(f'Start recording')
             elden_agent.keyboard.press('=')
             time.sleep(0.05)
             elden_agent.keyboard.release('=')
@@ -345,7 +345,7 @@ def stop_recording():
     if request.method == 'POST':
         try:
             print('Stop Recording')
-            update_status(f'Stop recording')
+            #update_status(f'Stop recording')
             elden_agent.keyboard.press('-')
             time.sleep(0.05)
             elden_agent.keyboard.release('-')
@@ -361,7 +361,7 @@ def tag_file(max_reward=None, iteration=None):
     if request.method == 'POST':
         try:
             print('Renaming run')
-            update_status(f'Naming recorded run #{int(iteration)}')
+            #update_status(f'Naming recorded run #{int(iteration)}')
             
             max_ts = None
             file_to_rename = None
@@ -422,11 +422,24 @@ def release_keys():
     if request.method == 'POST':
         try:
             print('RELEASE KEYS')
-            update_status(f'Release keys')
+            #update_status(f'Release keys')
             
             for key in elden_agent.keys_pressed:
                 elden_agent.keyboard.release(key)
             elden_agent.keys_pressed = []
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/status/update', methods=["POST"])
+def status_update():
+    if request.method == 'POST':
+        try:
+            request_json = request.get_json(force=True)
+            update_status(f'{request_json["text"]}')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
