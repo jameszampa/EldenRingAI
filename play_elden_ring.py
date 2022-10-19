@@ -4,7 +4,6 @@ import time
 import secrets
 import subprocess
 
-from sklearn.metrics import max_error
 from get_levels import get_stats
 from pynput import keyboard as kb
 from WindowManager import WindowMgr
@@ -309,7 +308,7 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             elden_agent.keyboard.press('w')
-            time.sleep(4)
+            time.sleep(3)
             elden_agent.keyboard.release('w')
 
             elden_agent.keyboard.press('q')
