@@ -254,16 +254,7 @@ def return_to_grace():
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
 
-            time.sleep(40)
-            elden_agent.keyboard.press('w')
-            time.sleep(10)
-            elden_agent.keyboard.release('w')
-            elden_agent.keyboard.press('d')
-            time.sleep(2)
-            elden_agent.keyboard.release('d')
-            elden_agent.keyboard.press('w')
-            time.sleep(2.5)
-            elden_agent.keyboard.release('w')
+            time.sleep(15)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
