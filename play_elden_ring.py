@@ -193,22 +193,22 @@ def custom_action(action):
                 time.sleep(0.05)
                 elden_agent.keyboard.release(kb.Key.space)
             elif action == 6:
-                elden_agent.keyboard.press('5')
-                elden_agent.keys_pressed.append('5')
+                elden_agent.keyboard.press('4')
+                elden_agent.keys_pressed.append('4')
             elif action == 7:
                 elden_agent.keyboard.press(kb.Key.shift_l)
                 elden_agent.keys_pressed.append(kb.Key.shift_l)
+                elden_agent.keyboard.press('4')
+                elden_agent.keys_pressed.append('4')
+            elif action == 8:
                 elden_agent.keyboard.press('5')
                 elden_agent.keys_pressed.append('5')
-            elif action == 8:
-                elden_agent.keyboard.press('6')
-                elden_agent.keys_pressed.append('6')
                 time.sleep(0.5)
             elif action == 9:
                 elden_agent.keyboard.press(kb.Key.shift_l)
                 elden_agent.keys_pressed.append(kb.Key.shift_l)
-                elden_agent.keyboard.press('6')
-                elden_agent.keys_pressed.append('6')
+                elden_agent.keyboard.press('5')
+                elden_agent.keys_pressed.append('5')
             elif action == 10:
                 elden_agent.keyboard.press('r')
                 elden_agent.keys_pressed.append('r')
