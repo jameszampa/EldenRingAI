@@ -301,17 +301,7 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             elden_agent.keyboard.press('w')
-            time.sleep(5)
-            elden_agent.keyboard.release('w')
-
-            elden_agent.keyboard.press('w')
-            elden_agent.keyboard.press('a')
-            time.sleep(1)
-            elden_agent.keyboard.release('w')
-            elden_agent.keyboard.release('a')
-
-            elden_agent.keyboard.press('w')
-            time.sleep(1)
+            time.sleep(6.5)
             elden_agent.keyboard.release('w')
 
             elden_agent.keyboard.press('q')
