@@ -195,11 +195,18 @@ class EldenEnv(gym.Env):
         json_message = {'text': 'Check for frozen screen'}
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+
         # check frozen load screen
         reset = 0
+        self.done = False
         for i in range(15):
             ret, frame = self.cap.read()
-            self.done = False
+
+            parry_image = frame[675:710, 85:150]
+            parry_image = cv2.resize(parry_image, (parry_image.shape[1]*5, parry_image.shape[0]*5))
+            parry_text = pytesseract.image_to_string(parry_image,  lang='eng',config='--psm 6 --oem 3')
+            if 'Parry' in parry_text:
+                break
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))

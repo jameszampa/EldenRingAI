@@ -26,10 +26,14 @@ while True:
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
     print(rewardGen.boss_hp)
-    lost_connection_image = frame[475:550, 675:1250]
-    lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
-    lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
-    print(lost_connection_text)
     
+
+    parry_image = frame[675:710, 85:150]
+    parry_image = cv2.resize(parry_image, (parry_image.shape[1]*5, parry_image.shape[0]*5))
+    parry_text = pytesseract.image_to_string(parry_image,  lang='eng',config='--psm 6 --oem 3')
+    print(parry_text)
+
+    cv2.imshow('data', parry_image)
+    cv2.waitKey(1)
             
     #cv2.waitKey(1)
