@@ -215,7 +215,7 @@ def custom_action(action):
             elif action == 11:
                 elden_agent.keyboard.press(kb.Key.space)
                 elden_agent.keys_pressed.append(kb.Key.space)
-                time.sleep(0.5)
+                time.sleep(1)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
