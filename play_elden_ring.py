@@ -237,10 +237,10 @@ def return_to_grace():
             time.sleep(1)
 
             elden_agent.keyboard.press('e')
-            elden_agent.keyboard.press('4')
+            elden_agent.keyboard.press('3')
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
-            elden_agent.keyboard.release('4')
+            elden_agent.keyboard.release('3')
 
             time.sleep(1)
 
