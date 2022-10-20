@@ -199,20 +199,15 @@ class EldenEnv(gym.Env):
         # check frozen load screen
         reset = 0
         self.done = False
-        for i in range(15):
+        for i in range(10):
             ret, frame = self.cap.read()
-
-            parry_image = frame[675:710, 85:150]
-            parry_image = cv2.resize(parry_image, (parry_image.shape[1]*5, parry_image.shape[0]*5))
-            parry_text = pytesseract.image_to_string(parry_image,  lang='eng',config='--psm 6 --oem 3')
-            if 'Parry' in parry_text:
-                break
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             if "Next" in next_text:
                 reset += 1
+                continue
 
             # This didnt work :(
             lost_connection_image = frame[475:550, 675:1250]
@@ -235,7 +230,7 @@ class EldenEnv(gym.Env):
             #time.sleep(1)
         
         
-        if reset >= 12:
+        if reset >= 8:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
