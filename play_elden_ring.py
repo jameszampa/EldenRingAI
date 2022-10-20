@@ -254,7 +254,7 @@ def return_to_grace():
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
 
-            time.sleep(11.5)
+            time.sleep(10)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
