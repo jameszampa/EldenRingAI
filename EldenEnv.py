@@ -232,7 +232,7 @@ class EldenEnv(gym.Env):
                 if word in revive_loc_text:
                     reset += 1
                     break
-            time.sleep(1)
+            #time.sleep(1)
         
         
         if reset >= 12:
