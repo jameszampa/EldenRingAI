@@ -179,6 +179,7 @@ class EldenReward:
             #     self.curr_hp = self.max_hp
         self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
         
+        boss_hp = 1
         if self.seen_boss and not self.death:
             boss_hp_image = frame[869:873, 475:1460]
             lower = np.array([100,0,0])
