@@ -25,15 +25,27 @@ while True:
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
-    print(rewardGen.boss_hp)
+    #print(rewardGen.boss_hp)
     
 
-    parry_image = frame[675:710, 85:150]
-    parry_image = cv2.resize(parry_image, (parry_image.shape[1]*5, parry_image.shape[0]*5))
-    parry_text = pytesseract.image_to_string(parry_image,  lang='eng',config='--psm 6 --oem 3')
-    print(parry_text)
-
-    cv2.imshow('data', parry_image)
+    hp_image = frame[51:55, 175:175 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 40]
+    lower = np.array([0,150,75])
+    upper = np.array([150,255,125])
+    hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv, lower, upper)
+    matches = np.argwhere(mask==255)
+    print("PlayerHP:", len(matches) / (hp_image.shape[1] * hp_image.shape[0]))
+    
+    
+    boss_hp_image = frame[869:873, 475:1460]
+    lower = np.array([100,0,0])
+    upper = np.array([150,255,255])
+    hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv, lower, upper)
+    matches = np.argwhere(mask==255)
+    print("BossHP:", len(matches) / (boss_hp_image.shape[1] * boss_hp_image.shape[0]))
+    # 
+    cv2.imshow('data', mask)
     cv2.waitKey(1)
             
     #cv2.waitKey(1)

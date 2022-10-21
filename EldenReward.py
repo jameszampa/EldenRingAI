@@ -133,32 +133,18 @@ class EldenReward:
         hp_reward = 0
         if not self.death:
             if self.time_since_last_hp_change > 1.0:
-                hp_image = frame[45:55, 155:155 + int(self.max_hp * self.hp_ratio)]
-                p_count = 0
-                for i in range(int(self.max_hp * self.hp_ratio)):
-                    avg = 0
-                    for j in range(10):
-                        r = np.float64(hp_image[j, i][0])
-                        g = np.float64(hp_image[j, i][1])
-                        b = np.float64(hp_image[j, i][2])
-                        avg = np.float64((r + g + b)) / 3
-                    if avg > 100:
-                        p_count += 1
-                    if p_count > 5:
-                        self.prev_hp = self.curr_hp
-                        self.curr_hp = (i / int(self.max_hp * self.hp_ratio)) * self.max_hp
-                        if not self.prev_hp is None and not self.curr_hp is None:
-                            hp_reward = (self.curr_hp - self.prev_hp) * 10000
-                            if hp_reward != 0:
-                                self.time_since_last_hp_change = time.time()
-                        break
-                if p_count < 5:
-                    self.prev_hp = self.curr_hp
-                    self.curr_hp = 0 * self.max_hp
-                    if not self.prev_hp is None and not self.curr_hp is None:
-                        hp_reward = (self.curr_hp - self.prev_hp) * 10000
-                        if hp_reward != 0:
-                            self.time_since_last_hp_change = time.time()
+                hp_image = frame[51:55, 175:175 + int(self.max_hp * self.hp_ratio) - 40]
+                lower = np.array([0,150,75])
+                upper = np.array([150,255,125])
+                hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
+                mask = cv2.inRange(hsv, lower, upper)
+                matches = np.argwhere(mask==255)
+                self.prev_hp = self.curr_hp
+                self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
+                if not self.prev_hp is None and not self.curr_hp is None:
+                    hp_reward = (self.curr_hp - self.prev_hp) * 10000
+                    if hp_reward != 0:
+                        self.time_since_last_hp_change = time.time()
 
             boss_name = self._get_boss_name(frame)
             boss_dmg_reward = 0
@@ -194,28 +180,13 @@ class EldenReward:
         self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
         
         if self.seen_boss and not self.death:
-            boss_hp = 1
-            boss_hp_image = frame[865:875, 465:1460]
-            p_count = 0
-            for i in range(int(1460 - 465)):
-                avg = 0
-                for j in range(10):
-                    r = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][0])
-                    g = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][1])
-                    b = np.float64(boss_hp_image[j, (1460 - 465 - 1) - i][2])
-                    avg = np.float64((r + g + b)) / 3
-                if (avg / 10) > 4:
-                    p_count += 1
-                if p_count > 15:
-                    if i <= 25:
-                        boss_hp = 1
-                    else:
-                        boss_hp = ((1460 - 465 - 1) - i) / (1460 - 465)
-                    break
-            if p_count < 15:
-                boss_hp = 0
-        else:
-            boss_hp = 1
+            boss_hp_image = frame[869:873, 475:1460]
+            lower = np.array([100,0,0])
+            upper = np.array([150,255,255])
+            hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
+            mask = cv2.inRange(hsv, lower, upper)
+            matches = np.argwhere(mask==255)
+            boss_hp = len(matches) / (boss_hp_image.shape[1] * boss_hp_image.shape[0])
 
         if self.boss_hp is None:
             self.boss_hp = 1
@@ -224,6 +195,7 @@ class EldenReward:
             self.boss_hp = boss_hp
             self.boss_hp_history.append(self.boss_hp)
             self.time_since_last_boss_hp_change = time.time()
+            
         percent_through_fight_reward = 0
         if not self.death:
             if len(self.boss_hp_history) >= self.boss_hp_target_window:
