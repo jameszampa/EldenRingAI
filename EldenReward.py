@@ -177,7 +177,7 @@ class EldenReward:
                     if not self.seen_boss:
                         boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
                     else:
-                        boss_find_reward = self.time_till_fight * 1000
+                        boss_find_reward = self.time_till_fight * 100
                     try:
                         dmg = self._get_boss_dmg(frame)
                         self.curr_boss_hp -= dmg
@@ -185,7 +185,7 @@ class EldenReward:
                     except:
                         pass
                 else:
-                    boss_find_reward = -time_since_boss * 25
+                    boss_find_reward = -time_since_boss * 250
                 
                 
             # if p_count < 10:
