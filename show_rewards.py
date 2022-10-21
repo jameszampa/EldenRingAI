@@ -28,7 +28,7 @@ while True:
     #print(rewardGen.boss_hp)
     
 
-    hp_image = frame[51:55, 175:175 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 40]
+    hp_image = frame[51:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
     lower = np.array([0,150,75])
     upper = np.array([150,255,125])
     hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
@@ -36,14 +36,6 @@ while True:
     matches = np.argwhere(mask==255)
     print("PlayerHP:", len(matches) / (hp_image.shape[1] * hp_image.shape[0]))
     
-    
-    boss_hp_image = frame[869:873, 475:1460]
-    lower = np.array([100,0,0])
-    upper = np.array([150,255,255])
-    hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
-    mask = cv2.inRange(hsv, lower, upper)
-    matches = np.argwhere(mask==255)
-    print("BossHP:", len(matches) / (boss_hp_image.shape[1] * boss_hp_image.shape[0]))
     # 
     cv2.imshow('data', mask)
     cv2.waitKey(1)
