@@ -229,7 +229,7 @@ class EldenReward:
             self.death = (self.curr_hp / self.max_hp) <= self.death_ratio
             time_alive = time.time() - self.time_since_death
             if self.seen_boss:
-                time_alive_reward = (time_alive * 0.1) * (self.time_alive_multiplier * 0.5)
+                time_alive_reward = (time_alive * 0.001) * (self.time_alive_multiplier)
             else:
                 time_alive_reward = 0
             if self.death:
