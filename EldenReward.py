@@ -165,9 +165,10 @@ class EldenReward:
                     else:
                         boss_find_reward = 0
                     try:
-                        dmg = self._get_boss_dmg(frame)
+                        #dmg = self._get_boss_dmg(frame)
                         #self.curr_boss_hp -= dmg
-                        boss_dmg_reward = 0.5
+                        #boss_dmg_reward = 0
+                        pass
                     except:
                         pass
                 else:
