@@ -181,6 +181,11 @@ class EldenEnv(gym.Env):
                 self.max_reward = self.reward
             elif self.max_reward < self.reward:
                 self.max_reward = self.reward
+        
+        if self.reward < -1:
+            self.reward = -1
+        if self.reward > 1:
+            self.reward = 1
 
         return observation, self.reward, self.done, info
     
