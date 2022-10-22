@@ -168,8 +168,7 @@ class EldenEnv(gym.Env):
         info = {}
         self.first_step = False
         self.iteration += 1
-        self.logger.add_scalar('reward', self.reward, self.iteration)
-
+        
         if not self.done:
             json_message = {"death": self.death,
                             "reward": self.reward,
@@ -177,15 +176,18 @@ class EldenEnv(gym.Env):
                             "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
             requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
-            if self.max_reward is None:
-                self.max_reward = self.reward
-            elif self.max_reward < self.reward:
-                self.max_reward = self.reward
-        
+
         if self.reward < -1:
             self.reward = -1
         if self.reward > 1:
             self.reward = 1
+
+        if self.max_reward is None:
+            self.max_reward = self.reward
+        elif self.max_reward < self.reward:
+            self.max_reward = self.reward
+
+        self.logger.add_scalar('reward', self.reward, self.iteration)
 
         return observation, self.reward, self.done, info
     
