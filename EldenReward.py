@@ -142,7 +142,7 @@ class EldenReward:
             self.prev_hp = self.curr_hp
             self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
             if not self.prev_hp is None and not self.curr_hp is None:
-                hp_reward = (self.curr_hp - self.prev_hp) * 10000
+                hp_reward = (self.curr_hp - self.prev_hp) / self.max_hp
                 if hp_reward != 0:
                     self.time_since_last_hp_change = time.time()
 
@@ -161,17 +161,17 @@ class EldenReward:
                 time_since_boss = time.time() - self.time_since_seen_boss
                 if time_since_boss < boss_timeout:
                     if not self.seen_boss:
-                        boss_find_reward = ((boss_timeout - time_since_boss) / boss_timeout) * 100
+                        boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
                     else:
-                        boss_find_reward = self.time_till_fight * 100
+                        boss_find_reward = 0
                     try:
                         dmg = self._get_boss_dmg(frame)
-                        self.curr_boss_hp -= dmg
-                        boss_dmg_reward = dmg * 100
+                        #self.curr_boss_hp -= dmg
+                        boss_dmg_reward = 0.5
                     except:
                         pass
                 else:
-                    boss_find_reward = -time_since_boss * 250
+                    boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
                 
                 
             # if p_count < 10:
@@ -212,7 +212,7 @@ class EldenReward:
                     elif boss_min > self.boss_hp_history[-(i + 1)]:
                         boss_min = self.boss_hp_history[-(i + 1)]
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
-                    percent_through_fight_reward = (1 - self.boss_hp) * 10000
+                    percent_through_fight_reward = (1 - self.boss_hp) * 1
                     self.time_alive_multiplier = 1 - self.boss_hp
                     if self.boss_hp < self.min_boss_hp:
                         self.min_boss_hp = self.boss_hp
@@ -228,7 +228,7 @@ class EldenReward:
             self.death = (self.curr_hp / self.max_hp) <= self.death_ratio
             time_alive = time.time() - self.time_since_death
             if self.seen_boss:
-                time_alive_reward = (time_alive * 10) * (self.time_alive_multiplier * 25)
+                time_alive_reward = (time_alive * 0.1) * (self.time_alive_multiplier * 0.5)
             else:
                 time_alive_reward = 0
             if self.death:
