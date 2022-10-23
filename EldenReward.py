@@ -141,6 +141,17 @@ class EldenReward:
             matches = np.argwhere(mask==255)
             self.prev_hp = self.curr_hp
             self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
+
+            # check for 1 hp
+            if (self.curr_hp / self.max_hp) < self.death_ratio:
+                lower = np.array([0,0,150])
+                upper = np.array([255,255,255])
+                hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
+                mask = cv2.inRange(hsv, lower, upper)
+                matches = np.argwhere(mask==255)
+                self.prev_hp = self.curr_hp
+                self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
+
             if not self.prev_hp is None and not self.curr_hp is None:
                 hp_reward = (self.curr_hp - self.prev_hp) / self.max_hp
                 if hp_reward != 0:
