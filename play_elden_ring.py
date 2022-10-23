@@ -147,7 +147,7 @@ def death_reset():
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
-            time.sleep(19)
+            time.sleep(18)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -301,7 +301,7 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             elden_agent.keyboard.press('w')
-            time.sleep(1.5)
+            time.sleep(0.5)
             elden_agent.keyboard.release('w')
 
             
