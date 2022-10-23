@@ -52,27 +52,6 @@ def focus_window():
                 elden_agent.keyboard.release('a')
                 elden_agent.keyboard.release('d')
 
-                time.sleep(1)
-
-                elden_agent.keyboard.press('e')
-                elden_agent.keyboard.press('4')
-                time.sleep(0.1)
-                elden_agent.keyboard.release('e')
-                elden_agent.keyboard.release('4')
-
-                time.sleep(1)
-
-                elden_agent.keyboard.press(kb.Key.left)
-                time.sleep(0.1)
-                elden_agent.keyboard.release(kb.Key.left)
-
-                time.sleep(1)
-
-                elden_agent.keyboard.press('e')
-                time.sleep(0.1)
-                elden_agent.keyboard.release('e')
-
-                time.sleep(30)
                 press_q = True
                 for i in range(15):
                     if press_q:
