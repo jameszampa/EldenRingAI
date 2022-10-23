@@ -236,19 +236,28 @@ class EldenEnv(gym.Env):
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
         loading_screen = "Next" in next_text
+        loading_screen_history = []
         num_in_row = 0
         min_look = 10
         
-        while reset_idx < min_look or (loading_screen and num_in_row < 30 * 30):
+        while True:
             frame = self.cap.frame
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             loading_screen = "Next" in next_text
-            num_in_row += 1
             time.sleep(1/30)
-            reset_idx += 1
+            loading_screen_history.append(loading_screen)
+            if len(loading_screen_history) > min_look:
+                all_false = True
+                for i in range(5):
+                    if loading_screen_history[-(i + 1)]:
+                        all_false = False
+                if all_false:
+                    break
+                if len(loading_screen_history) > 30*30:
+                    break
 
         # This didnt work :(
         lost_connection_image = frame[475:550, 675:1250]
@@ -260,7 +269,7 @@ class EldenEnv(gym.Env):
             if word in lost_connection_text:
                 lost_connection = True
         
-        if num_in_row > 30 * 30 or lost_connection:
+        if len(loading_screen_history) > 30*30 or lost_connection:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
