@@ -259,10 +259,10 @@ class EldenEnv(gym.Env):
                 if word in revive_loc_text:
                     reset += 1
                     break
-            #time.sleep(1)
+            time.sleep(1/30)
         
         
-        if reset >= 8:
+        if reset >= 10:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
