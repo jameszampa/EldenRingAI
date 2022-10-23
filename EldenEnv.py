@@ -10,6 +10,8 @@ from gym import spaces
 from tensorboardX import SummaryWriter
 from EldenReward import EldenReward
 import json
+from threading import Thread
+
 
 TOTAL_ACTIONABLE_TIME = 120
 
@@ -48,6 +50,33 @@ with open('vigor_chart.csv', 'r') as v_chart:
 #print(HP_CHART)
 
 
+class ThreadedCamera(object):
+    def __init__(self, src=0):
+        self.capture = cv2.VideoCapture(src)
+        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
+        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
+        # FPS = 1/X
+        # X = desired FPS
+        self.FPS = 1/30
+        self.FPS_MS = int(self.FPS * 1000)
+        
+        # Start frame retrieval thread
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
+        
+    def update(self):
+        while True:
+            if self.capture.isOpened():
+                (self.status, self.frame) = self.capture.read()
+            time.sleep(self.FPS)
+            
+    def show_frame(self):
+        cv2.imshow('frame', self.frame)
+        cv2.waitKey(self.FPS_MS)
+
+
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
@@ -60,16 +89,14 @@ class EldenEnv(gym.Env):
         # Example for using image as input (channel-first; channel-last also works):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
-        
-        self.cap = cv2.VideoCapture('/dev/video0')
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
+
+        src = '/dev/video0'
+        self.cap = ThreadedCamera(src)
+
         self.agent_ip = '192.168.4.70'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
 
-        ret, _ = self.cap.read()
-        if not ret:
-            raise ValueError("Unable to find ELDEN RING camera")
+        # img = self.cap.frame
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
@@ -105,9 +132,7 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        ret, frame = self.cap.read()
-        if not ret:
-            raise ValueError("Unable to capture ELDENRING frame")
+        frame = self.cap.frame
 
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
