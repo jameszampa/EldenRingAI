@@ -147,7 +147,7 @@ def death_reset():
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
-            time.sleep(12)
+            time.sleep(13)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -254,7 +254,7 @@ def return_to_grace():
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
 
-            time.sleep(9)
+            time.sleep(11)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
