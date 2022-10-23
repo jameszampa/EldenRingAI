@@ -239,7 +239,9 @@ class EldenEnv(gym.Env):
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             if "Next" in next_text:
                 reset += 1
+                time.sleep(1/30)
                 continue
+                
 
             # This didnt work :(
             lost_connection_image = frame[475:550, 675:1250]
@@ -249,8 +251,10 @@ class EldenEnv(gym.Env):
             for word in lost_connection_words:
                 if word in lost_connection_text:
                     reset += 1
+                    time.sleep(1/30)
                     break
-
+            
+            
             revive_loc_img = frame[800:850, 800:1100]
             revive_loc_img = cv2.resize(revive_loc_img, ((1100-800)*3, (850-800)*3))
             revive_loc_text = pytesseract.image_to_string(revive_loc_img,  lang='eng',config='--psm 6 --oem 3')
@@ -258,8 +262,9 @@ class EldenEnv(gym.Env):
             for word in revive_loc_words:
                 if word in revive_loc_text:
                     reset += 1
+                    time.sleep(1/30)
                     break
-            time.sleep(1/30)
+            
         
         
         if reset >= 10:
