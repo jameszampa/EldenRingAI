@@ -231,43 +231,34 @@ class EldenEnv(gym.Env):
         # check frozen load screen
         reset = 0
         self.done = False
-        for i in range(10):
+        frame = self.cap.frame
+        next_text_image = frame[1015:1040, 155:205]
+        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+        loading_screen = "Next" in next_text
+        num_in_row = 0
+        
+        while loading_screen or num_in_row > 30 * 30:
             frame = self.cap.frame
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
-            if "Next" in next_text:
-                reset += 1
-                time.sleep(1/30)
-                continue
-                
+            loading_screen = "Next" in next_text
+            num_in_row += 1
+            time.sleep(1/30)
 
-            # This didnt work :(
-            lost_connection_image = frame[475:550, 675:1250]
-            lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
-            lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
-            lost_connection_words = ["connection", "game", "server", "lost"]
-            for word in lost_connection_words:
-                if word in lost_connection_text:
-                    reset += 1
-                    time.sleep(1/30)
-                    break
-            
-            
-            revive_loc_img = frame[800:850, 800:1100]
-            revive_loc_img = cv2.resize(revive_loc_img, ((1100-800)*3, (850-800)*3))
-            revive_loc_text = pytesseract.image_to_string(revive_loc_img,  lang='eng',config='--psm 6 --oem 3')
-            revive_loc_words = ["Choose", "revival", "location"]
-            for word in revive_loc_words:
-                if word in revive_loc_text:
-                    reset += 1
-                    time.sleep(1/30)
-                    break
-            
+        # This didnt work :(
+        lost_connection_image = frame[475:550, 675:1250]
+        lost_connection_image = cv2.resize(lost_connection_image, ((1250-675)*3, (550-475)*3))
+        lost_connection_text = pytesseract.image_to_string(lost_connection_image,  lang='eng',config='--psm 6 --oem 3')
+        lost_connection_words = ["connection", "game", "server", "lost"]
+        lost_connection = False
+        for word in lost_connection_words:
+            if word in lost_connection_text:
+                lost_connection = True
         
-        
-        if reset >= 10:
+        if num_in_row > 30 * 30 or lost_connection:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
