@@ -232,7 +232,7 @@ class EldenEnv(gym.Env):
         reset = 0
         self.done = False
         for i in range(10):
-            ret, frame = self.cap.read()
+            frame = self.cap.frame
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
