@@ -229,7 +229,7 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
 
         # check frozen load screen
-        reset = 0
+        reset_idx = 0
         self.done = False
         frame = self.cap.frame
         next_text_image = frame[1015:1040, 155:205]
@@ -237,8 +237,9 @@ class EldenEnv(gym.Env):
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
         loading_screen = "Next" in next_text
         num_in_row = 0
+        min_look = 10
         
-        while loading_screen or num_in_row > 30 * 30:
+        while reset_idx < min_look or (loading_screen and num_in_row < 30 * 30):
             frame = self.cap.frame
 
             next_text_image = frame[1015:1040, 155:205]
@@ -247,6 +248,7 @@ class EldenEnv(gym.Env):
             loading_screen = "Next" in next_text
             num_in_row += 1
             time.sleep(1/30)
+            reset_idx += 1
 
         # This didnt work :(
         lost_connection_image = frame[475:550, 675:1250]
