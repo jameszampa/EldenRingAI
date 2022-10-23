@@ -33,7 +33,7 @@ class EldenReward:
 
         self.character_slot = char_slot
 
-        self.death_ratio = 0.02
+        self.death_ratio = 0.005
 
         self.time_since_death = time.time()
         self.time_since_seen_boss = time.time()
