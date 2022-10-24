@@ -308,6 +308,9 @@ class EldenEnv(gym.Env):
         self.rewardGen.boss_hp = 1
 
         headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
+        headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
 
         return observation
