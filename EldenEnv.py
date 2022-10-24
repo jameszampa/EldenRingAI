@@ -305,6 +305,7 @@ class EldenEnv(gym.Env):
         self.rewardGen.prev_hp = self.rewardGen.max_hp
         self.rewardGen.curr_hp = self.rewardGen.max_hp
         self.rewardGen.time_since_reset = time.time()
+        self.boss_hp = 1
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
