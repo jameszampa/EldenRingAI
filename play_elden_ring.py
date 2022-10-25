@@ -42,9 +42,9 @@ def focus_window():
             except Exception as e:
                 print("ERROR: Could not fild Elden Ring Restarting")
                 update_status('Could not fild Elden Ring restarting')
-                time.sleep(60)
-                os.system("taskkill /f /im eldenring.exe")
                 time.sleep(60 * 3)
+                os.system("taskkill /f /im eldenring.exe")
+                time.sleep(60 * 5)
                 subprocess.run([elden_agent.path_elden_ring])
                 time.sleep(180)
                 elden_agent.keyboard.release('w')

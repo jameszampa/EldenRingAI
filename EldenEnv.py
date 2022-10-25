@@ -119,6 +119,7 @@ class EldenEnv(gym.Env):
         self.locked_on = False
         self.num_runs = 0
         self.max_reward = None
+        self.time_since_r = time.time()
 
 
     def step(self, action):
@@ -140,6 +141,9 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('hp', hp, self.iteration)
         self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
         self.logger.add_scalar('find_reward', find_reward, self.iteration)
+        if hp > 0 and self.time_since_r > 1.0:
+            hp = 0
+
         self.reward = time_alive + percent_through + hp + dmg_reward + find_reward
 
         if not self.death:
@@ -159,6 +163,8 @@ class EldenEnv(gym.Env):
                 if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.75:
                     pass
                 else:
+                    if int(action) == 10:
+                        self.time_since_r = time.time()
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
                     #time.sleep(0.25)
