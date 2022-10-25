@@ -141,7 +141,7 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('hp', hp, self.iteration)
         self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
         self.logger.add_scalar('find_reward', find_reward, self.iteration)
-        if hp > 0 and self.time_since_r > 1.0:
+        if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
         self.reward = time_alive + percent_through + hp + dmg_reward + find_reward
