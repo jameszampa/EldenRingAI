@@ -111,7 +111,7 @@ class EldenEnv(gym.Env):
         self.reward = 0
         self.rewardGen = EldenReward(1, logdir)
         self.death = False
-        self.t_start = None
+        self.t_start = time.time()
         self.done = False
         self.iteration = 0
         self.first_step = False
