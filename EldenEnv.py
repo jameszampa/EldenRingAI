@@ -220,6 +220,7 @@ class EldenEnv(gym.Env):
             self.max_reward = self.reward
 
         self.logger.add_scalar('reward', self.reward, self.iteration)
+        self.reward_history.append(self.reward)
 
         return observation, self.reward, self.done, info
     
