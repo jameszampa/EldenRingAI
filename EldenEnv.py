@@ -121,6 +121,8 @@ class EldenEnv(gym.Env):
         self.max_reward = None
         self.time_since_r = time.time()
         self.reward_history = []
+        self.parry_dict = {'vod_duration':None,
+                           'parries': []}
 
 
     def step(self, action):
@@ -166,6 +168,8 @@ class EldenEnv(gym.Env):
                 else:
                     if int(action) == 10:
                         self.time_since_r = time.time()
+                    if int(action) == 9:
+                        self.parry_dict['parries'].append(time.time() - self.t_start)
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
                     #time.sleep(0.25)
@@ -229,6 +233,7 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
+        self.parry_dict['vod_duration'] = time.time() - self.t_start
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
 
@@ -296,7 +301,7 @@ class EldenEnv(gym.Env):
 
 
         headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
@@ -321,6 +326,9 @@ class EldenEnv(gym.Env):
             avg_r = total_r / len(self.reward_history)
             self.logger.add_scalar('average_reward_per_run', avg_r, self.num_runs)
         self.reward_history = []
+        self.parry_dict = {'vod_duration':None,
+                           'parries': []}
+
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)

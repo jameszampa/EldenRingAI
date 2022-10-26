@@ -11,6 +11,8 @@ from flask import Flask, request, Response
 import re
 import datetime
 import shutil
+import moviepy.editor as mp
+from pydub import AudioSegment, effects
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -343,12 +345,14 @@ def tag_file(max_reward=None, iteration=None):
         try:
             print('Renaming run')
             #update_status(f'Naming recorded run #{int(iteration)}')
-            
+            request_json = request.get_json(force=True)
+
             max_ts = None
             file_to_rename = None
             vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
             saved_runs_dir = r"E:\\Documents\\EldenRingAI\\saved_runs"
-            
+            parries_dir = r"E:\\Documents\\EldenRingAI\\parries"
+
             for file in os.listdir(vod_dir):
                 file_name = file.split(".")[0]
                 ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
@@ -362,6 +366,15 @@ def tag_file(max_reward=None, iteration=None):
             source = os.path.join(vod_dir, file_to_rename)
             dest = os.path.join(saved_runs_dir, str(iteration) + "_" + str(max_reward) + '.mkv')
             shutil.move(source, dest)
+
+            clip = mp.VideoFileClip(dest)
+            clip.audio.write_audiofile(r"tmp.wav", ffmpeg_params=["-ac", "1", "-ar", "16000"])
+            audio = AudioSegment.from_file(r"tmp.wav", format="wav")
+            for i, parry in enumerate(request_json['parries']):
+                combined = AudioSegment.empty()
+                extract = audio[parry * 1000:(parry + 2) * 1000]
+                combined += extract
+                combined.export(os.path.join(parries_dir, str(iteration) + "_" + str(max_reward) + "_" + str(i).zfill(6) + ".wav"), format="wav")
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
