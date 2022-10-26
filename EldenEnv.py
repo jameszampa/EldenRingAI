@@ -120,6 +120,7 @@ class EldenEnv(gym.Env):
         self.num_runs = 0
         self.max_reward = None
         self.time_since_r = time.time()
+        self.reward_history = []
 
 
     def step(self, action):
@@ -312,6 +313,12 @@ class EldenEnv(gym.Env):
         self.rewardGen.curr_hp = self.rewardGen.max_hp
         self.rewardGen.time_since_reset = time.time()
         self.rewardGen.boss_hp = 1
+        total_r = 0
+        for r in self.reward_history:
+            total_r += r
+        avg_r = total_r / len(self.reward_history)
+        self.logger.add_scalar('average_reward_per_run', avg_r, self.num_runs)
+        self.reward_history = []
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
