@@ -156,6 +156,8 @@ class EldenReward:
                 hp_reward = (self.curr_hp - self.prev_hp) / self.max_hp
                 if hp_reward != 0:
                     self.time_since_last_hp_change = time.time()
+                if hp_reward > 0:
+                    hp_reward /= 4
 
             boss_name = self._get_boss_name(frame)
             boss_dmg_reward = 0
