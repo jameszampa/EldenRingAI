@@ -1,3 +1,3 @@
 Dead: True
-Reward: 0.00
-Num resets: 59
+Reward: 0.25
+Num resets: 1253
