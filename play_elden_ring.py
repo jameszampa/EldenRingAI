@@ -197,6 +197,10 @@ def custom_action(action):
                 elden_agent.keyboard.press(kb.Key.space)
                 elden_agent.keys_pressed.append(kb.Key.space)
                 time.sleep(1)
+            elif action == 12:
+                elden_agent.keyboard.press('f')
+                time.sleep(0.05)
+                elden_agent.keyboard.release('f')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

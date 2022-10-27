@@ -26,7 +26,8 @@ DISCRETE_ACTIONS = {'w': 'run_forwards',
                     'm2': 'guard',
                     'shift+m2': 'skill',
                     'r': 'use_item',
-                    'space_hold': 'sprint'}
+                    'space_hold': 'sprint',
+                    'f': 'jump'}
                     #'e': 'event_action'}
                     # 'up': 'uparrow',
                     # 'down': 'downarrow',
