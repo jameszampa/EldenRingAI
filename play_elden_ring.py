@@ -267,7 +267,7 @@ def init_fight():
             update_status(f'Initializing fight')
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(4)
+            time.sleep(3)
             elden_agent.keyboard.press('f')
             time.sleep(0.05)
             elden_agent.keyboard.release('f')
