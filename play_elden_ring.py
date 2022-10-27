@@ -281,7 +281,7 @@ def init_fight():
 
             elden_agent.keyboard.press('d')
             #elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(2)
+            time.sleep(1)
             elden_agent.keyboard.release('d')
             #elden_agent.keyboard.press('w')
             time.sleep(2.5)
