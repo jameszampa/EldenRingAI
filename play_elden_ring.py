@@ -523,7 +523,6 @@ class AudioRecorder():
         self.active = True
         self.audio_frames = []
         self.stream.start_stream()
-        data = self.stream.read(self.frames_per_buffer) 
         for i in range(0, int(self.rate / self.frames_per_buffer * 2)):
             data = self.stream.read(self.frames_per_buffer)
             self.audio_frames.append(data)
@@ -542,14 +541,7 @@ class AudioRecorder():
     def close(self):
         self.stream.close()
         self.audio.terminate()
-
-        waveFile = wave.open(self.audio_filename, 'wb')
-        waveFile.setnchannels(self.channels)
-        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
-        waveFile.setframerate(self.rate)
-        waveFile.writeframes(b''.join(self.audio_frames))
-        waveFile.close()
-
+        
     # Launches the audio recording function using a thread
     def start(self):
         audio_thread = threading.Thread(target=self.record)
