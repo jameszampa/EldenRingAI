@@ -520,8 +520,8 @@ class AudioRecorder():
 
     # Audio starts being recorded
     def record(self):
-        # self.audio_frames = []
         self.active = True
+        self.audio_frames = []
         self.stream.start_stream()
         data = self.stream.read(self.frames_per_buffer) 
         self.audio_frames.append(data)
