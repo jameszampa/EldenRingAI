@@ -167,6 +167,7 @@ class EldenEnv(gym.Env):
         if not self.t_since_parry is None and (time.time() - self.t_since_parry) > 2:
             headers = {"Content-Type": "application/json"}
             response = requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+            response = requests.post(f"http://{self.agent_ip}:6000/recording/get_parry", headers=headers)
             parry_sound_bytes = response.json()['parry_sound_bytes']
             byte_io = io.BytesIO(parry_sound_bytes)
             AudioSegment.from_raw(byte_io, 16000*2, 16000, 1).export(f'parries/{self.iteration}.wav', format='wav')

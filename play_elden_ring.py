@@ -344,8 +344,23 @@ def stop_recording():
             elden_agent.keyboard.press('-')
             time.sleep(0.05)
             elden_agent.keyboard.release('-')
+            time.sleep(0.05)
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
 
+
+@app.route('/recording/get_parry', methods=["POST"])
+def get_parry():
+    if request.method == 'POST':
+        try:
+            print('get_parry')
             vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
+            frames = b''
+            if len(os.listdir(vod_dir)) == 0:
+                return Response(status=404)
             for file in os.listdir(vod_dir):
                 file_name = file.split(".")[0]
                 ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
@@ -356,19 +371,21 @@ def stop_recording():
                     max_ts = ts
                     file_to_rename = file
             
-            source = os.path.join(vod_dir, file_to_rename)
-            clip = mp.VideoFileClip(source)
-            clip.audio.write_audiofile(r"tmp.wav", ffmpeg_params=["-ac", "1", "-ar", "16000"])
-            with wave.open("tmp.wav") as fd:
-                params = fd.getparams()
-                frames = fd.readframes(16000*2)
+            try:
+                source = os.path.join(vod_dir, file_to_rename)
+                clip = mp.VideoFileClip(source)
+                clip.audio.write_audiofile(r"tmp.wav", ffmpeg_params=["-ac", "1", "-ar", "16000"])
+                with wave.open("tmp.wav") as fd:
+                    params = fd.getparams()
+                    frames = fd.readframes(16000*2)
+            except Exception as e:
+                print(str(e))
             #os.remove(source)
             return json.dumps({'parry_sound_bytes':frames})
         except Exception as e:
             return json.dumps({'error':str(e)})
     else:
         return Response(status=400)
-
 
 @app.route('/recording/tag_latest/<max_reward>/<iteration>', methods=["POST"])
 def tag_file(max_reward=None, iteration=None):
