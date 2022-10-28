@@ -511,9 +511,9 @@ class AudioRecorder():
         self.stream = self.audio.open(format=self.format,
                                       channels=self.channels,
                                       rate=self.rate,
-                                      input=True,
+                                      output=True,
                                       frames_per_buffer = self.frames_per_buffer,
-                                      input_device_index=0)
+                                      input_device_index=5)
         self.audio_frames = []
         self.active = False
 
@@ -566,7 +566,7 @@ def new_parry():
 
 
 @app.route('/audio/reset', methods=["POST"])
-def new_parry():
+def audio_reset():
     global audio_cap
     if request.method == 'POST':
         try:
@@ -595,7 +595,7 @@ def audio_to_fft(audio):
 
 
 @app.route('/audio/check_parries', methods=["POST"])
-def new_parry():
+def check_parry():
     if request.method == 'POST':
         try:
             print('PARRY_CHECK')
