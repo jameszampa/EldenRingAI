@@ -503,7 +503,7 @@ class AudioRecorder():
     def __init__(self, device):
         self.open = True
         self.rate = 16000
-        self.frames_per_buffer = 16000 * 2
+        self.frames_per_buffer = 1000
         self.channels = 1
         self.format = pyaudio.paInt16
         self.audio_filename = "temp_audio.wav"
@@ -524,7 +524,9 @@ class AudioRecorder():
         self.audio_frames = []
         self.stream.start_stream()
         data = self.stream.read(self.frames_per_buffer) 
-        self.audio_frames.append(data)
+        for i in range(0, int(self.rate / self.frames_per_buffer * 2)):
+            data = self.stream.read(self.frames_per_buffer)
+            self.audio_frames.append(data)
         self.stream.stop_stream()
         waveFile = wave.open(self.audio_filename, 'wb')
         waveFile.setnchannels(self.channels)
