@@ -207,7 +207,7 @@ class EldenReward:
             self.boss_hp = 1
 
         if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
-            boss_dmg_reward = (self.boss_hp - boss_hp)
+            boss_dmg_reward = (self.boss_hp - boss_hp) * 15
             if boss_dmg_reward < 0:
                 boss_dmg_reward = 0
             self.boss_hp = boss_hp
