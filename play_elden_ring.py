@@ -613,7 +613,7 @@ def check_parry():
                         break
                     else:
                         parry_reward = 0
-            audio_cap.audio_frames = []
+            #audio_cap.audio_frames = []
             return json.dumps({'parry_reward': parry_reward})
         except Exception as e:
             return json.dumps({'error':str(e)})
