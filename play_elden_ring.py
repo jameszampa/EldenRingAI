@@ -374,17 +374,17 @@ def get_parry():
             print('get_parry')
             vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
             frames = b''
-            max_ts = None
+            min_ts = None
             if len(os.listdir(vod_dir)) == 0:
                 return Response(status=404)
             for file in os.listdir(vod_dir):
                 file_name = file.split(".")[0]
                 ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
-                if max_ts is None:
-                    max_ts = ts
+                if min_ts is None:
+                    min_ts = ts
                     file_to_rename = file
-                elif max_ts < ts:
-                    max_ts = ts
+                elif min_ts > ts:
+                    min_ts = ts
                     file_to_rename = file
             
             try:
