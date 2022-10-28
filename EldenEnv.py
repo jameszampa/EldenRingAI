@@ -168,22 +168,25 @@ class EldenEnv(gym.Env):
         if not self.t_since_parry is None and (time.time() - self.t_since_parry) > 2:
             headers = {"Content-Type": "application/json"}
             response = requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-        try:
-            response = requests.post(f"http://{self.agent_ip}:6000/recording/get_parry", headers=headers)
-            print(response.json())
-            parry_sound_bytes = response.json()['parry_sound_bytes']
-            decoded_bytes = base64.b64decode(parry_sound_bytes)
-            byte_io = io.BytesIO(decoded_bytes)
-            AudioSegment.from_raw(byte_io, 16000*2, 16000, 1).export(f'parries/{self.iteration}.wav', format='wav')
-            audio = np.expand_dims(byte_io, axis=0)
-            fft = audio_to_fft(audio)
-            y_pred = self.parry_detector(fft)
-            labels = np.squeeze(y_pred)
-            index = np.argmax(labels, axis=0)
-            if CLASS_NAMES[index] == 'successful_parries':
-                parry_reward = 1
-        except:
-            pass
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/recording/get_num_files", headers=headers)
+        if response.json()['num_files'] > 0:
+            try:
+                response = requests.post(f"http://{self.agent_ip}:6000/recording/get_parry", headers=headers)
+                print(response.json())
+                parry_sound_bytes = response.json()['parry_sound_bytes']
+                decoded_bytes = base64.b64decode(parry_sound_bytes)
+                byte_io = io.BytesIO(decoded_bytes)
+                AudioSegment.from_raw(byte_io, 16000*2, 16000, 1).export(f'parries/{self.iteration}.wav', format='wav')
+                audio = np.expand_dims(byte_io, axis=0)
+                fft = audio_to_fft(audio)
+                y_pred = self.parry_detector(fft)
+                labels = np.squeeze(y_pred)
+                index = np.argmax(labels, axis=0)
+                if CLASS_NAMES[index] == 'successful_parries':
+                    parry_reward = 1
+            except Exception as e:
+                print(str(e))
 
 
         json_message = {'text': 'Step'}

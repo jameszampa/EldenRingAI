@@ -353,6 +353,20 @@ def stop_recording():
         return Response(status=400)
 
 
+@app.route('/recording/get_num_files', methods=["POST"])
+def get_num_files():
+    if request.method == 'POST':
+        try:
+            print('get_num_files')
+            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
+            return json.dumps({'num_files': len(os.listdir(vod_dir))})
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+
 @app.route('/recording/get_parry', methods=["POST"])
 def get_parry():
     if request.method == 'POST':
