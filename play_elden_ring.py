@@ -19,7 +19,7 @@ import threading
 import time
 import subprocess
 import os
-import tensorflow as tf
+#import tensorflow as tf
 import numpy as np
 
 class EldenAgent:
@@ -551,7 +551,7 @@ class AudioRecorder():
 
 audio_cap = AudioRecorder(0)
 CLASS_NAMES = ['successful_parries', 'missed_parries']
-parry_detector = tf.saved_model.load('parry_detector')
+#parry_detector = tf.saved_model.load('parry_detector')
 
 @app.route('/audio/new_parry', methods=["POST"])
 def new_parry():
