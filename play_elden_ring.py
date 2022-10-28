@@ -362,7 +362,7 @@ def stop_recording():
             with wave.open("tmp.wav") as fd:
                 params = fd.getparams()
                 frames = fd.readframes(16000*2)
-            os.remove(source)
+            #os.remove(source)
             return json.dumps({'parry_sound_bytes':frames})
         except Exception as e:
             return json.dumps({'error':str(e)})
