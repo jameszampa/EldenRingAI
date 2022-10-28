@@ -18,6 +18,8 @@ import threading
 import time
 import subprocess
 import os
+import tensorflow as tf
+import io
 
 
 TOTAL_ACTIONABLE_TIME = 120
@@ -48,7 +50,7 @@ IMG_WIDTH = 1920
 IMG_HEIGHT = 1080
 MODEL_HEIGHT = 450
 MODEL_WIDTH = 800
-
+CLASS_NAMES = ['successful_parries', 'missed_parries']
 HP_CHART = {}
 with open('vigor_chart.csv', 'r') as v_chart:
     for line in v_chart.readlines():
@@ -57,6 +59,27 @@ with open('vigor_chart.csv', 'r') as v_chart:
         HP_CHART[stat_point] = hp_amount
 #print(HP_CHART)
 
+
+def audio_to_fft(audio):
+    # Since tf.signal.fft applies FFT on the innermost dimension,
+    # we need to squeeze the dimensions and then expand them again
+    # after FFT
+    audio = tf.squeeze(audio, axis=-1)
+    fft = tf.signal.fft(
+        tf.cast(tf.complex(real=audio, imag=tf.zeros_like(audio)), tf.complex64)
+    )
+    fft = tf.expand_dims(fft, axis=-1)
+
+    # Return the absolute value of the first half of the FFT
+    # which represents the positive frequencies
+    return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
+
+
+def path_to_audio(path):
+    """Reads and decodes an audio file."""
+    audio = tf.io.read_file(path)
+    audio, _ = tf.audio.decode_wav(audio, 1, 2 * 16000)
+    return audio
 
 class ThreadedCamera(object):
     def __init__(self, src=0):
@@ -130,12 +153,29 @@ class EldenEnv(gym.Env):
         self.reward_history = []
         self.parry_dict = {'vod_duration':None,
                            'parries': []}
+        self.t_since_parry = time.time()
+        self.parry_detector = tf.saved_model.load('parry_detector')
 
 
     def step(self, action):
-        if int(action) == 9:
+        parry_reward = 0
+        if int(action) == 9 and (time.time() - self.t_since_parry) > 2:
             headers = {"Content-Type": "application/json"}
-            response = requests.post(f"http://{self.agent_ip}:6000/audio/new_parry", headers=headers)
+            requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
+            self.t_since_parry = time.time()
+        if (time.time() - self.t_since_parry) > 2:
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+            parry_sound_bytes = response.json()['parry_sound_bytes']
+            byte_io = io.BytesIO(parry_sound_bytes)
+            audio = np.expand_dims(byte_io, axis=0)
+            fft = audio_to_fft(audio)
+            y_pred = self.parry_detector(fft)
+            labels = np.squeeze(y_pred)
+            index = np.argmax(labels, axis=0)
+            if CLASS_NAMES[index] == 'successful_parries':
+                parry_reward = 1
+
 
         json_message = {'text': 'Step'}
         headers = {"Content-Type": "application/json"}
@@ -150,10 +190,6 @@ class EldenEnv(gym.Env):
         frame = self.cap.frame
 
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
-        
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/audio/check_parries", headers=headers)
-        parry_reward = response.json()['parry_reward']
 
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
         self.logger.add_scalar('percent_through', percent_through, self.iteration)
@@ -251,8 +287,6 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         self.parry_dict['vod_duration'] = time.time() - self.t_start
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
 
         json_message = {'text': 'Check for frozen screen'}
         headers = {"Content-Type": "application/json"}
@@ -320,11 +354,10 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
 
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
+        #headers = {"Content-Type": "application/json"}
+        #requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
 
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
+        
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.t_start = time.time()
