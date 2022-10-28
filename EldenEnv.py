@@ -21,6 +21,7 @@ import os
 import tensorflow as tf
 import io
 from pydub import AudioSegment
+import base64
 
 TOTAL_ACTIONABLE_TIME = 120
 
@@ -170,7 +171,8 @@ class EldenEnv(gym.Env):
             response = requests.post(f"http://{self.agent_ip}:6000/recording/get_parry", headers=headers)
             print(response.json())
             parry_sound_bytes = response.json()['parry_sound_bytes']
-            byte_io = io.BytesIO(parry_sound_bytes)
+            decoded_bytes = base64.b64decode(parry_sound_bytes)
+            byte_io = io.BytesIO(decoded_bytes)
             AudioSegment.from_raw(byte_io, 16000*2, 16000, 1).export(f'parries/{self.iteration}.wav', format='wav')
             audio = np.expand_dims(byte_io, axis=0)
             fft = audio_to_fft(audio)

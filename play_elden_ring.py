@@ -22,6 +22,7 @@ import os
 #import tensorflow as tf
 import numpy as np
 import wave
+import base64
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -379,10 +380,11 @@ def get_parry():
                 with wave.open("tmp.wav") as fd:
                     params = fd.getparams()
                     frames = fd.readframes(16000*2)
+                parry_sound_bytes = str(base64.b64encode(frames))
             except Exception as e:
                 print(str(e))
             #os.remove(source)
-            return json.dumps({'parry_sound_bytes':frames})
+            return json.dumps({'parry_sound_bytes':parry_sound_bytes})
         except Exception as e:
             return json.dumps({'error':str(e)})
     else:
