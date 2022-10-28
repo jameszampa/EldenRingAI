@@ -6,14 +6,31 @@ import time
 import requests
 import os
 from tensorboardX import SummaryWriter
+import tensorflow as tf
 
 TOTAL_ACTIONABLE_TIME = 120
 HP_CHART = {}
+CLASS_NAMES = ['successful_parries', 'missed_parries']
 with open('vigor_chart.csv', 'r') as v_chart:
     for line in v_chart.readlines():
         stat_point = int(line.split(',')[0])
         hp_amount = int(line.split(',')[1])
         HP_CHART[stat_point] = hp_amount
+
+
+def audio_to_fft(audio):
+    # Since tf.signal.fft applies FFT on the innermost dimension,
+    # we need to squeeze the dimensions and then expand them again
+    # after FFT
+    audio = tf.squeeze(audio, axis=-1)
+    fft = tf.signal.fft(
+        tf.cast(tf.complex(real=audio, imag=tf.zeros_like(audio)), tf.complex64)
+    )
+    fft = tf.expand_dims(fft, axis=-1)
+
+    # Return the absolute value of the first half of the FFT
+    # which represents the positive frequencies
+    return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
 
 
 class EldenReward:
@@ -56,6 +73,7 @@ class EldenReward:
         self.time_till_fight = 120
         self.time_since_reset = time.time()
         self.min_boss_hp = 1
+        self.parry_detector = tf.saved_model.load('parry_detector')
 
 
     def _request_stats(self):
@@ -107,7 +125,7 @@ class EldenReward:
             return 0
 
         
-    def update(self, frame):
+    def update(self, frame, parry_audio):
         self.iteration += 1
         # self.previous_runes_held = self.current_runes_held
         # try:
@@ -130,6 +148,20 @@ class EldenReward:
                 #     if self.current_stats[i] != self.previous_stats[i]:
                 #         stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
         
+        parry_reward = 0
+        if len(parry_audio) > 0:
+            for audio in parry_audio:
+                audio = np.expand_dims(audio, axis=0)
+                fft = audio_to_fft(audio)
+                y_pred = self.parry_detector(fft)
+                labels = np.squeeze(y_pred)
+                index = np.argmax(labels, axis=0)
+                if CLASS_NAMES[index] == 'successful_parries':
+                    parry_reward = 1
+                else:
+                    parry_reward = 0
+
+
         hp_reward = 0
         if not self.death:
             # if self.time_since_last_hp_change > 1.0:
@@ -256,6 +288,6 @@ class EldenReward:
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
                 self.boss_hp_history = []
-                return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, parry_reward
             else:
-                return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, parry_reward

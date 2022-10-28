@@ -11,6 +11,13 @@ from tensorboardX import SummaryWriter
 from EldenReward import EldenReward
 import json
 from threading import Thread
+import cv2
+import pyaudio
+import wave
+import threading
+import time
+import subprocess
+import os
 
 
 TOTAL_ACTIONABLE_TIME = 120
@@ -49,6 +56,55 @@ with open('vigor_chart.csv', 'r') as v_chart:
         hp_amount = int(line.split(',')[1])
         HP_CHART[stat_point] = hp_amount
 #print(HP_CHART)
+
+
+class AudioRecorder():
+    # Audio class based on pyAudio and Wave
+    def __init__(self, input):
+        self.open = True
+        self.rate = 16000
+        self.frames_per_buffer = 16000 * 2
+        self.channels = 1
+        self.format = pyaudio.paInt16
+        self.audio_filename = "temp_audio.wav"
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=self.format,
+                                      channels=self.channels,
+                                      rate=self.rate,
+                                      input=True,
+                                      frames_per_buffer = self.frames_per_buffer)
+        self.audio_frames = []
+        self.active = False
+
+
+    # Audio starts being recorded
+    def record(self):
+        # self.audio_frames = []
+        self.active = True
+        self.stream.start_stream()
+        data = self.stream.read(self.frames_per_buffer) 
+        self.audio_frames.append(data)
+        self.stream.stop_stream()
+        self.active = False
+
+    def get_audio(self):
+        return self.audio_frames
+
+    def close(self):
+        self.stream.close()
+        self.audio.terminate()
+
+        waveFile = wave.open(self.audio_filename, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
+
+    # Launches the audio recording function using a thread
+    def start(self):
+        audio_thread = threading.Thread(target=self.record)
+        audio_thread.start()
 
 
 class ThreadedCamera(object):
@@ -93,7 +149,7 @@ class EldenEnv(gym.Env):
 
         src = '/dev/video0'
         self.cap = ThreadedCamera(src)
-
+        self.audio_cap = AudioRecorder(src)
         self.agent_ip = '192.168.4.70'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
 
@@ -127,6 +183,9 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
+        if int(action) == 9 and not self.audio_cap.active:
+            self.audio_cap.start()
+
         json_message = {'text': 'Step'}
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
@@ -139,16 +198,17 @@ class EldenEnv(gym.Env):
 
         frame = self.cap.frame
 
-        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
+        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen, parry_reward = self.rewardGen.update(frame, self.audio_cap.get_audio())
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
         self.logger.add_scalar('percent_through', percent_through, self.iteration)
         self.logger.add_scalar('hp', hp, self.iteration)
         self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
         self.logger.add_scalar('find_reward', find_reward, self.iteration)
+        self.logger.add_scalar('parry_reward', parry_reward, self.iteration)
         if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
-        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward
+        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
 
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
@@ -241,6 +301,9 @@ class EldenEnv(gym.Env):
         json_message = {'text': 'Check for frozen screen'}
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+
+        self.audio_cap.close()
+        self.audio_cap = AudioRecorder('/dev/video0')
 
         # check frozen load screen
         reset_idx = 0
