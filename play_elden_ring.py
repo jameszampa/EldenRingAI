@@ -13,6 +13,14 @@ import datetime
 import shutil
 import moviepy.editor as mp
 from pydub import AudioSegment, effects
+import pyaudio
+import wave
+import threading
+import time
+import subprocess
+import os
+import tensorflow as tf
+import numpy as np
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -484,6 +492,129 @@ def request_stats(char_slot=None):
                         'faith' : stats[6],
                         'arcane' : stats[7]}
             return json.dumps(json_stats)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+class AudioRecorder():
+    # Audio class based on pyAudio and Wave
+    def __init__(self, device):
+        self.open = True
+        self.rate = 16000
+        self.frames_per_buffer = 16000 * 2
+        self.channels = 1
+        self.format = pyaudio.paInt16
+        self.audio_filename = "temp_audio.wav"
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=self.format,
+                                      channels=self.channels,
+                                      rate=self.rate,
+                                      input=True,
+                                      frames_per_buffer = self.frames_per_buffer,
+                                      input_device_index=0)
+        self.audio_frames = []
+        self.active = False
+
+
+    # Audio starts being recorded
+    def record(self):
+        # self.audio_frames = []
+        self.active = True
+        self.stream.start_stream()
+        data = self.stream.read(self.frames_per_buffer) 
+        self.audio_frames.append(data)
+        self.stream.stop_stream()
+        self.active = False
+
+    def get_audio(self):
+        return self.audio_frames
+
+    def close(self):
+        self.stream.close()
+        self.audio.terminate()
+
+        waveFile = wave.open(self.audio_filename, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
+
+    # Launches the audio recording function using a thread
+    def start(self):
+        audio_thread = threading.Thread(target=self.record)
+        audio_thread.start()
+
+audio_cap = AudioRecorder(0)
+CLASS_NAMES = ['successful_parries', 'missed_parries']
+parry_detector = tf.saved_model.load('parry_detector')
+
+@app.route('/audio/new_parry', methods=["POST"])
+def new_parry():
+    if request.method == 'POST':
+        try:
+            print('NEW_PARRY')
+            if not audio_cap.active:
+                audio_cap.start()
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
+@app.route('/audio/reset', methods=["POST"])
+def new_parry():
+    global audio_cap
+    if request.method == 'POST':
+        try:
+            print('reset audio')
+            audio_cap.close()
+            audio_cap = AudioRecorder(0)
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+def audio_to_fft(audio):
+    # Since tf.signal.fft applies FFT on the innermost dimension,
+    # we need to squeeze the dimensions and then expand them again
+    # after FFT
+    audio = tf.squeeze(audio, axis=-1)
+    fft = tf.signal.fft(
+        tf.cast(tf.complex(real=audio, imag=tf.zeros_like(audio)), tf.complex64)
+    )
+    fft = tf.expand_dims(fft, axis=-1)
+
+    # Return the absolute value of the first half of the FFT
+    # which represents the positive frequencies
+    return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
+
+
+@app.route('/audio/check_parries', methods=["POST"])
+def new_parry():
+    if request.method == 'POST':
+        try:
+            print('PARRY_CHECK')
+            parry_reward = 0
+            parry_audio = audio_cap.get_audio()
+            if len(parry_audio) > 0:
+                for audio in parry_audio:
+                    audio = np.expand_dims(audio, axis=0)
+                    fft = audio_to_fft(audio)
+                    y_pred = parry_detector(fft)
+                    labels = np.squeeze(y_pred)
+                    index = np.argmax(labels, axis=0)
+                    if CLASS_NAMES[index] == 'successful_parries':
+                        parry_reward = 1
+                        break
+                    else:
+                        parry_reward = 0
+            audio_cap.audio_frames = []
+            return json.dumps({'parry_reward': parry_reward})
         except Exception as e:
             return json.dumps({'error':str(e)})
     else:

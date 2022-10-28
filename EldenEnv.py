@@ -58,55 +58,6 @@ with open('vigor_chart.csv', 'r') as v_chart:
 #print(HP_CHART)
 
 
-class AudioRecorder():
-    # Audio class based on pyAudio and Wave
-    def __init__(self, input):
-        self.open = True
-        self.rate = 16000
-        self.frames_per_buffer = 16000 * 2
-        self.channels = 1
-        self.format = pyaudio.paInt16
-        self.audio_filename = "temp_audio.wav"
-        self.audio = pyaudio.PyAudio()
-        self.stream = self.audio.open(format=self.format,
-                                      channels=self.channels,
-                                      rate=self.rate,
-                                      input=True,
-                                      frames_per_buffer = self.frames_per_buffer)
-        self.audio_frames = []
-        self.active = False
-
-
-    # Audio starts being recorded
-    def record(self):
-        # self.audio_frames = []
-        self.active = True
-        self.stream.start_stream()
-        data = self.stream.read(self.frames_per_buffer) 
-        self.audio_frames.append(data)
-        self.stream.stop_stream()
-        self.active = False
-
-    def get_audio(self):
-        return self.audio_frames
-
-    def close(self):
-        self.stream.close()
-        self.audio.terminate()
-
-        waveFile = wave.open(self.audio_filename, 'wb')
-        waveFile.setnchannels(self.channels)
-        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
-        waveFile.setframerate(self.rate)
-        waveFile.writeframes(b''.join(self.audio_frames))
-        waveFile.close()
-
-    # Launches the audio recording function using a thread
-    def start(self):
-        audio_thread = threading.Thread(target=self.record)
-        audio_thread.start()
-
-
 class ThreadedCamera(object):
     def __init__(self, src=0):
         self.capture = cv2.VideoCapture(src)
@@ -149,7 +100,6 @@ class EldenEnv(gym.Env):
 
         src = '/dev/video0'
         self.cap = ThreadedCamera(src)
-        self.audio_cap = AudioRecorder(src)
         self.agent_ip = '192.168.4.70'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
 
@@ -183,8 +133,9 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
-        if int(action) == 9 and not self.audio_cap.active:
-            self.audio_cap.start()
+        if int(action) == 9:
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(f"http://{self.agent_ip}:6000/audio/new_parry", headers=headers)
 
         json_message = {'text': 'Step'}
         headers = {"Content-Type": "application/json"}
@@ -198,7 +149,12 @@ class EldenEnv(gym.Env):
 
         frame = self.cap.frame
 
-        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen, parry_reward = self.rewardGen.update(frame, self.audio_cap.get_audio())
+        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
+        
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/audio/check_parries", headers=headers)
+        parry_reward = response.json()['parry_reward']
+
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
         self.logger.add_scalar('percent_through', percent_through, self.iteration)
         self.logger.add_scalar('hp', hp, self.iteration)
@@ -302,8 +258,8 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
 
-        self.audio_cap.close()
-        self.audio_cap = AudioRecorder('/dev/video0')
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
         # check frozen load screen
         reset_idx = 0
