@@ -381,10 +381,11 @@ def get_parry():
                     params = fd.getparams()
                     frames = fd.readframes(16000*2)
                 parry_sound_bytes = str(base64.b64encode(frames))
+                os.remove(source)
+                return json.dumps({'parry_sound_bytes':parry_sound_bytes})
             except Exception as e:
                 print(str(e))
-            #os.remove(source)
-            return json.dumps({'parry_sound_bytes':parry_sound_bytes})
+                return json.dumps({'error':str(e)})
         except Exception as e:
             return json.dumps({'error':str(e)})
     else:

@@ -168,6 +168,7 @@ class EldenEnv(gym.Env):
         if not self.t_since_parry is None and (time.time() - self.t_since_parry) > 2:
             headers = {"Content-Type": "application/json"}
             response = requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+        try:
             response = requests.post(f"http://{self.agent_ip}:6000/recording/get_parry", headers=headers)
             print(response.json())
             parry_sound_bytes = response.json()['parry_sound_bytes']
@@ -181,6 +182,8 @@ class EldenEnv(gym.Env):
             index = np.argmax(labels, axis=0)
             if CLASS_NAMES[index] == 'successful_parries':
                 parry_reward = 1
+        except:
+            pass
 
 
         json_message = {'text': 'Step'}
