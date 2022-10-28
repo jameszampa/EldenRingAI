@@ -197,6 +197,7 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
         self.logger.add_scalar('find_reward', find_reward, self.iteration)
         self.logger.add_scalar('parry_reward', parry_reward, self.iteration)
+        
         if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
@@ -283,6 +284,7 @@ class EldenEnv(gym.Env):
     
     def reset(self):
         self.num_runs += 1
+        self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
