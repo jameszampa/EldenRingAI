@@ -526,6 +526,12 @@ class AudioRecorder():
         data = self.stream.read(self.frames_per_buffer) 
         self.audio_frames.append(data)
         self.stream.stop_stream()
+        waveFile = wave.open(self.audio_filename, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
         self.active = False
 
     def get_audio(self):
@@ -613,7 +619,7 @@ def check_parry():
                         break
                     else:
                         parry_reward = 0
-            #audio_cap.audio_frames = []
+            audio_cap.audio_frames = []
             return json.dumps({'parry_reward': parry_reward})
         except Exception as e:
             return json.dumps({'error':str(e)})
