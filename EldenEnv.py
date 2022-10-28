@@ -153,7 +153,7 @@ class EldenEnv(gym.Env):
         self.reward_history = []
         self.parry_dict = {'vod_duration':None,
                            'parries': []}
-        self.t_since_parry = time.time()
+        self.t_since_parry = None
         self.parry_detector = tf.saved_model.load('parry_detector')
 
 
@@ -163,7 +163,7 @@ class EldenEnv(gym.Env):
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
             self.t_since_parry = time.time()
-        if (time.time() - self.t_since_parry) > 2:
+        if not self.t_since_parry is None and (time.time() - self.t_since_parry) > 2:
             headers = {"Content-Type": "application/json"}
             response = requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
             parry_sound_bytes = response.json()['parry_sound_bytes']
