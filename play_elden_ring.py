@@ -527,6 +527,8 @@ class AudioRecorder():
             data = self.stream.read(self.frames_per_buffer)
             self.audio_frames.append(data)
         self.stream.stop_stream()
+        self.stream.close()
+        self.audio.terminate()
         waveFile = wave.open(self.audio_filename, 'wb')
         waveFile.setnchannels(self.channels)
         waveFile.setsampwidth(self.audio.get_sample_size(self.format))
@@ -600,19 +602,19 @@ def check_parry():
         try:
             print('PARRY_CHECK')
             parry_reward = 0
-            parry_audio = audio_cap.get_audio()
-            if len(parry_audio) > 0:
-                for audio in parry_audio:
-                    audio = np.expand_dims(audio, axis=0)
-                    fft = audio_to_fft(audio)
-                    y_pred = parry_detector(fft)
-                    labels = np.squeeze(y_pred)
-                    index = np.argmax(labels, axis=0)
-                    if CLASS_NAMES[index] == 'successful_parries':
-                        parry_reward = 1
-                        break
-                    else:
-                        parry_reward = 0
+            # parry_audio = audio_cap.get_audio()
+            # if len(parry_audio) > 0:
+            #     for audio in parry_audio:
+            #         audio = np.expand_dims(audio, axis=0)
+            #         fft = audio_to_fft(audio)
+            #         y_pred = parry_detector(fft)
+            #         labels = np.squeeze(y_pred)
+            #         index = np.argmax(labels, axis=0)
+            #         if CLASS_NAMES[index] == 'successful_parries':
+            #             parry_reward = 1
+            #             break
+            #         else:
+            #             parry_reward = 0
             audio_cap.audio_frames = []
             return json.dumps({'parry_reward': parry_reward})
         except Exception as e:
