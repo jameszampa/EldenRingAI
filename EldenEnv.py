@@ -170,6 +170,8 @@ class EldenEnv(gym.Env):
 
     def step(self, action):
         parry_reward = 0
+        if int(action) == 9:
+            self.parry_dict['parries'].append(time.time() - self.t_start)
         # if int(action) == 9:
         #     if self.t_since_parry is None or (time.time() - self.t_since_parry) > 2.1:
         #         headers = {"Content-Type": "application/json"}
@@ -244,8 +246,6 @@ class EldenEnv(gym.Env):
                 else:
                     if int(action) == 10:
                         self.time_since_r = time.time()
-                    if int(action) == 9:
-                        self.parry_dict['parries'].append(time.time() - self.t_start)
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
                     #time.sleep(0.25)
