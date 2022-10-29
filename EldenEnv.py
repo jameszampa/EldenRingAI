@@ -273,7 +273,10 @@ class EldenEnv(gym.Env):
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             else:
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+
             self.done = True
             
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
@@ -307,6 +310,7 @@ class EldenEnv(gym.Env):
     def reset(self):
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
+
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
@@ -378,13 +382,12 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
 
-        #headers = {"Content-Type": "application/json"}
-        #requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
 
         
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
-        self.t_start = time.time()
         self.done = False
         self.first_step = True
         self.locked_on = False
@@ -409,6 +412,10 @@ class EldenEnv(gym.Env):
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
+        self.t_start = time.time()
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)

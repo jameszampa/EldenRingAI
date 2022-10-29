@@ -345,7 +345,7 @@ def stop_recording():
             elden_agent.keyboard.press('-')
             time.sleep(0.05)
             elden_agent.keyboard.release('-')
-            time.sleep(0.05)
+            #time.sleep(0.05)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
