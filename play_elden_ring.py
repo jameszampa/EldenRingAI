@@ -513,10 +513,10 @@ def log_to_obs():
             print('Log to OBS')
             request_json = request.get_json(force=True)
             with open('obs_log.txt', 'w') as f:
-                f.write(f"Dead: {request_json['death']}")
-                f.write("\n")
-                f.write("FPS: {:.2f}".format(float(request_json['reward'])))
-                f.write("\n")
+                #f.write(f"Dead: {request_json['death']}")
+                #f.write("\n")
+                #f.write("FPS: {:.2f}".format(float(request_json['reward'])))
+                #f.write("\n")
                 f.write(f"Num resets: {request_json['num_run']}")
             with open('lowest_boss_hp.txt', 'w') as f:
                 f.write(f"{float(request_json['lowest_boss_hp'])}")
