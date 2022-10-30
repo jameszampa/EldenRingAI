@@ -332,6 +332,8 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
+        requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+
         # check frozen load screen
         reset_idx = 0
         self.done = False
