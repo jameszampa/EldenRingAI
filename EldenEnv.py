@@ -168,6 +168,7 @@ class EldenEnv(gym.Env):
         self.t_since_parry = None
         self.parry_detector = tf.saved_model.load('parry_detector')
         self.prev_step_start = time.time()
+        self.last_fps = 0
 
 
     def step(self, action):
