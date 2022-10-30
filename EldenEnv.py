@@ -172,15 +172,16 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
+        print('step start')
         t0 = time.time()
-        if (time.time() - self.prev_step_start) > 45:
-            headers = {"Content-Type": "application/json"}
-            for i in range(10):
-                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                time.sleep(0.1)
-            requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
-            requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
+        # if (time.time() - self.prev_step_start) > 45:
+        #     headers = {"Content-Type": "application/json"}
+        #     for i in range(10):
+        #         requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+        #         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        #         time.sleep(0.1)
+        #     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+        #     requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
         self.prev_step_start = time.time()
         parry_reward = 0
         if int(action) == 9:
@@ -212,16 +213,16 @@ class EldenEnv(gym.Env):
         #             parry_reward = 1
         #     except Exception as e:
         #         print(str(e))
-
+        print('focus window')
         t1 = time.time()
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
+        print('release keys')
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
         frame = self.cap.frame
-
+        print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
 
@@ -238,6 +239,7 @@ class EldenEnv(gym.Env):
 
         self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
 
+        print('custom action')
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
@@ -291,6 +293,7 @@ class EldenEnv(gym.Env):
                     time.sleep(0.1)
 
             self.done = True
+        print('final steps')
         t4 = time.time()
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
