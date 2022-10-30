@@ -276,9 +276,9 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
-                time.sleep(12)
+                for i in range(6):
+                    requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+                    time.sleep(2)
 
             self.done = True
         t4 = time.time()
