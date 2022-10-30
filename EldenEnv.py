@@ -245,7 +245,7 @@ class EldenEnv(gym.Env):
                         self.time_since_r = time.time()
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
-                    time.sleep(1/30)
+                    #time.sleep(1/30)
                     self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
