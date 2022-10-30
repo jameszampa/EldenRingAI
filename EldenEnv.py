@@ -170,6 +170,7 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
+        t0 = time.time()
         parry_reward = 0
         if int(action) == 9:
             self.parry_dict['parries'].append(time.time() - self.t_start)
@@ -282,7 +283,7 @@ class EldenEnv(gym.Env):
         
         if not self.done:
             json_message = {"death": self.death,
-                            "reward": self.reward,
+                            "reward": 1 / (time.time() - t0),
                             "num_run": self.num_runs,
                             "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
@@ -301,6 +302,7 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('reward', self.reward, self.iteration)
         self.reward_history.append(self.reward)
 
+        print(1 / (time.time() - t0))
         return observation, self.reward, self.done, info
     
     def reset(self):
