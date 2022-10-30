@@ -172,7 +172,7 @@ class EldenEnv(gym.Env):
 
     def step(self, action):
         t0 = time.time()
-        if time.time() - self.prev_step_start() > 10:
+        if (time.time() - self.prev_step_start) > 10:
             headers = {"Content-Type": "application/json"}
             for i in range(10):
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
