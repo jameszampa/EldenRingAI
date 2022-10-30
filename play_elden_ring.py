@@ -147,7 +147,6 @@ def death_reset():
                     elden_agent.keyboard.release(key[0])
                     elden_agent.keys_pressed.remove(key)
                     
-            time.sleep(12)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
