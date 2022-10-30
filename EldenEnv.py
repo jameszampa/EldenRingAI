@@ -168,7 +168,7 @@ class EldenEnv(gym.Env):
         self.t_since_parry = None
         self.parry_detector = tf.saved_model.load('parry_detector')
         self.prev_step_start = time.time()
-        self.last_fps = 0
+        self.last_fps = []
 
 
     def step(self, action):
@@ -317,7 +317,7 @@ class EldenEnv(gym.Env):
         print("t2-t3 took {:.5f} seconds".format(t3 - t2))
         print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         print("t4-t_end took {:.5f} seconds".format(t_end - t4))
-        self.last_fps = 1 / (t_end - t0)
+        self.last_fps.append(1 / (t_end - t0))
         #print(1 / (time.time() - t0))
         return observation, self.reward, self.done, info
     
@@ -337,9 +337,13 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
+        avg_fps = 0
+        for i in range(len(self.last_fps)):
+            avg_fps += self.last_fps[i]
+        self.last_fps = []
         #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
         json_message = {"death": self.death,
-                        "reward": self.last_fps,
+                        "reward": avg_fps / len(self.last_fps),
                         "num_run": self.num_runs,
                         "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
