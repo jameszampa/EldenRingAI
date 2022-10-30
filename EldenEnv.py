@@ -302,7 +302,7 @@ class EldenEnv(gym.Env):
                             "num_run": self.num_runs,
                             "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
-            requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
+            # requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         if self.reward < -1:
             self.reward = -1
