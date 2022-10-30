@@ -142,7 +142,7 @@ class EldenEnv(gym.Env):
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
-        time.sleep(180)
+        time.sleep(90)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
