@@ -61,6 +61,7 @@ class EldenReward:
         self.time_till_fight = 120
         self.time_since_reset = time.time()
         self.min_boss_hp = 1
+        self.time_since_check_for_boss = time.time()
         
 
 
@@ -170,8 +171,10 @@ class EldenReward:
                     hp_reward /= 8
 
             boss_name = ""
-            if not self.seen_boss:
+            if not self.seen_boss and time.time() - self.time_since_check_for_boss > 2:
                 boss_name = self._get_boss_name(frame)
+                self.time_since_check_for_boss = time.time()
+
             boss_dmg_reward = 0
             boss_find_reward = 0
             boss_timeout = 2.5
