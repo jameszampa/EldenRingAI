@@ -341,9 +341,11 @@ class EldenEnv(gym.Env):
         for i in range(len(self.last_fps)):
             avg_fps += self.last_fps[i]
         self.last_fps = []
+        if len(self.last_fps) > 0:
+            avg_fps = avg_fps / len(self.last_fps)
         #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
         json_message = {"death": self.death,
-                        "reward": avg_fps / len(self.last_fps),
+                        "reward": avg_fps,
                         "num_run": self.num_runs,
                         "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
