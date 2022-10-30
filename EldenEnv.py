@@ -98,6 +98,7 @@ class ThreadedCamera(object):
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
+        (self.status, self.frame) = self.capture.read()
         # FPS = 1/X
         # X = desired FPS
         self.FPS = 1/30
