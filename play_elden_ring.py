@@ -136,7 +136,17 @@ def death_reset():
                 f.write("\n")
                 f.write(f"Num resets: {curr_resets}")
             
-            for i in range(10):
+            for i in range(2):
+                elden_agent.keyboard.press('w')
+                elden_agent.keyboard.press('s')
+                elden_agent.keyboard.press('a')
+                elden_agent.keyboard.press('d')
+                elden_agent.keyboard.press('f')
+                elden_agent.keyboard.press('r')
+                elden_agent.keyboard.press('4')
+                elden_agent.keyboard.press('5')
+                elden_agent.keyboard.press(kb.Key.shift_l)
+                elden_agent.keyboard.press(kb.Key.space)
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
                 elden_agent.keyboard.release('a')
