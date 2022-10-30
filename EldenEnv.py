@@ -231,17 +231,15 @@ class EldenEnv(gym.Env):
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+                for i in range(5):
+                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                    time.sleep(0.1)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
                 self.reward = -10000000
                 self.rewardGen.time_since_death = time.time()
             else:
-                if not self.locked_on and time_since_boss_seen < 2.5:
-                    headers = {"Content-Type": "application/json"}
-                    requests.post(f"http://{self.agent_ip}:6000/action/lock_on", headers=headers)
-                    self.locked_on = True
-
                 if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.75:
                     pass
                 else:
@@ -276,9 +274,10 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(6):
-                    requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
-                    time.sleep(2)
+                for i in range(5):
+                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                    time.sleep(0.1)
 
             self.done = True
         t4 = time.time()
@@ -334,7 +333,7 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
-        requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+        #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
 
         # check frozen load screen
         reset_idx = 0
