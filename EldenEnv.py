@@ -202,6 +202,7 @@ class EldenEnv(gym.Env):
         #     except Exception as e:
         #         print(str(e))
 
+        t1 = time.time()
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
@@ -210,8 +211,10 @@ class EldenEnv(gym.Env):
 
         frame = self.cap.frame
 
+        t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
 
+        t3 = time.time()
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
         self.logger.add_scalar('percent_through', percent_through, self.iteration)
         self.logger.add_scalar('hp', hp, self.iteration)
@@ -275,7 +278,7 @@ class EldenEnv(gym.Env):
                 requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
 
             self.done = True
-            
+        t4 = time.time()
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
         self.first_step = False
@@ -302,7 +305,14 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('reward', self.reward, self.iteration)
         self.reward_history.append(self.reward)
 
-        print(1 / (time.time() - t0))
+        t_end = time.time()
+        print("Iteration: {} took {:.2f} seconds".format(self.iteration, t_end - t0))
+        print("t0-t1 took {:.5f} seconds".format(t1 - t0))
+        print("t1-t2 took {:.5f} seconds".format(t2 - t1))
+        print("t2-t3 took {:.5f} seconds".format(t3 - t2))
+        print("t3-t4 took {:.5f} seconds".format(t4 - t3))
+        print("t4-t_end took {:.5f} seconds".format(t_end - t4))
+        #print(1 / (time.time() - t0))
         return observation, self.reward, self.done, info
     
     def reset(self):
