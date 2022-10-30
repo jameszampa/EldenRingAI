@@ -139,6 +139,7 @@ class EldenReward:
 
         hp_reward = 0
         if not self.death:
+            t0 = time.time()
             # if self.time_since_last_hp_change > 1.0:
             hp_image = frame[51:55, 155:155 + int(self.max_hp * self.hp_ratio) - 20]
             lower = np.array([0,150,75])
@@ -159,6 +160,8 @@ class EldenReward:
                 self.prev_hp = self.curr_hp
                 self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
             
+            t1 = time.time()
+
             if not self.prev_hp is None and not self.curr_hp is None:
                 hp_reward = (self.curr_hp - self.prev_hp) / self.max_hp
                 if hp_reward != 0:
@@ -194,7 +197,7 @@ class EldenReward:
                 else:
                     boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
                 
-                
+            t2 = time.time()
             # if p_count < 10:
             #     self.prev_hp = self.curr_hp
             #     self.curr_hp = self.max_hp
@@ -220,6 +223,8 @@ class EldenReward:
             self.boss_hp = boss_hp
             self.boss_hp_history.append(self.boss_hp)
             self.time_since_last_boss_hp_change = time.time()
+
+        t3 = time.time()
 
         percent_through_fight_reward = 0
         if not self.death:
@@ -247,6 +252,13 @@ class EldenReward:
         else:
             percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
+
+        t_end = time.time()
+        print("Reward Player HP: {:.5f}".format(t1 - t0))
+        print("Reward Boss Find: {:.5f}".format(t2 - t1))
+        print("Reward Boss HP: {:.5f}".format(t3 - t2))
+        print("Reward Percent through: {:.5f}".format(t_end - t3))
+
 
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) <= self.death_ratio
