@@ -181,8 +181,6 @@ def custom_action(action):
                 elden_agent.keyboard.release('d')
             elif action == 5:
                 elden_agent.keyboard.press(kb.Key.space)
-                time.sleep(0.05)
-                elden_agent.keyboard.release(kb.Key.space)
             elif action == 6:
                 elden_agent.keyboard.press('4')
                 elden_agent.keys_pressed.append('4')
@@ -193,8 +191,7 @@ def custom_action(action):
                 elden_agent.keys_pressed.append('4')
             elif action == 8:
                 elden_agent.keyboard.press('5')
-                elden_agent.keys_pressed.append('5')
-                time.sleep(0.5)
+                elden_agent.keys_pressed.append(['5', 0.5, time.time()])
             elif action == 9:
                 elden_agent.keyboard.press(kb.Key.shift_l)
                 elden_agent.keys_pressed.append(kb.Key.shift_l)
@@ -205,12 +202,9 @@ def custom_action(action):
                 elden_agent.keys_pressed.append('r')
             elif action == 11:
                 elden_agent.keyboard.press(kb.Key.space)
-                elden_agent.keys_pressed.append(kb.Key.space)
-                time.sleep(1)
+                elden_agent.keys_pressed.append([kb.Key.space, 1, time.time()])
             elif action == 12:
                 elden_agent.keyboard.press('f')
-                time.sleep(0.05)
-                elden_agent.keyboard.release('f')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -485,7 +479,11 @@ def release_keys():
             #update_status(f'Release keys')
             
             for key in elden_agent.keys_pressed:
-                elden_agent.keyboard.release(key)
+                if type(key) == str:
+                    elden_agent.keyboard.release(key)
+                else:
+                    if time.time() - key[2] > key[1]:
+                        elden_agent.keyboard.release(key[0])
             elden_agent.keys_pressed = []
             return Response(status=200)
         except Exception as e:

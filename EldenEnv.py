@@ -201,11 +201,6 @@ class EldenEnv(gym.Env):
         #     except Exception as e:
         #         print(str(e))
 
-
-        json_message = {'text': 'Step'}
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
-
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
@@ -420,6 +415,10 @@ class EldenEnv(gym.Env):
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
+
+        json_message = {'text': 'Step'}
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
 
         return observation
 
