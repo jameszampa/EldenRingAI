@@ -231,7 +231,7 @@ class EldenEnv(gym.Env):
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
-                for i in range(5):
+                for i in range(10):
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                     requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
                     time.sleep(0.1)
@@ -274,7 +274,7 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(5):
+                for i in range(10):
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                     requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
                     time.sleep(0.1)
