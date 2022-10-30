@@ -221,6 +221,7 @@ def custom_action(action):
 
             elif action == 12:
                 elden_agent.keyboard.press('f')
+                elden_agent.keys_pressed.append('f')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
