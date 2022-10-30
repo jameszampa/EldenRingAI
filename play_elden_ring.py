@@ -518,7 +518,7 @@ def log_to_obs():
             with open('obs_log.txt', 'w') as f:
                 f.write(f"Dead: {request_json['death']}")
                 f.write("\n")
-                f.write("Reward: {:.2f}".format(float(request_json['reward'])))
+                f.write("FPS: {:.2f}".format(float(request_json['reward'])))
                 f.write("\n")
                 f.write(f"Num resets: {request_json['num_run']}")
             with open('lowest_boss_hp.txt', 'w') as f:
