@@ -338,13 +338,12 @@ class EldenEnv(gym.Env):
         response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
         #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
-        if not self.done:
-            json_message = {"death": self.death,
-                            "reward": self.last_fps,
-                            "num_run": self.num_runs,
-                            "lowest_boss_hp": self.rewardGen.min_boss_hp}
+        json_message = {"death": self.death,
+                        "reward": self.last_fps,
+                        "num_run": self.num_runs,
+                        "lowest_boss_hp": self.rewardGen.min_boss_hp}
 
-            requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
+        requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         # check frozen load screen
         reset_idx = 0
