@@ -146,6 +146,17 @@ def death_reset():
         return Response(status=400)
 
 
+def press_key(key_to_press, duration):
+    holding = False
+    for key in elden_agent.keys_pressed:
+        if type(key) != str and key[0] == key_to_press:
+            key[1] += duration / 2
+            holding = True
+    
+    if not holding:
+        elden_agent.keyboard.press(key_to_press)
+        elden_agent.keys_pressed.append([key_to_press, duration, time.time()])
+
 
 @app.route('/action/custom/<action>', methods=["POST"])
 def custom_action(action):
@@ -180,57 +191,23 @@ def custom_action(action):
                 elden_agent.keyboard.release('a')
                 elden_agent.keyboard.release('d')
             elif action == 5:
-                elden_agent.keyboard.press(kb.Key.space)
-                elden_agent.keyboard.release(kb.Key.space)
+                press_key(kb.Key.space, 0.1)
             elif action == 6:
-                elden_agent.keyboard.press('4')
-                #elden_agent.keys_pressed.append('4')
-                #elden_agent.keyboard.press(kb.Key.space)
-                elden_agent.keyboard.release('4')
+                press_key('4', 0.1)
             elif action == 7:
-                elden_agent.keyboard.press(kb.Key.shift_l)
-                #elden_agent.keys_pressed.append(kb.Key.shift_l)
-                elden_agent.keyboard.press('4')
-                #elden_agent.keys_pressed.append('4')
-                elden_agent.keyboard.release(kb.Key.shift_l)
-                elden_agent.keyboard.release('4')
+                press_key(kb.key.shift_l, 0.1)
+                press_key('4', 0.1)
             elif action == 8:
-                holding = False
-                for key in elden_agent.keys_pressed:
-                    if type(key) != str and key[0] == '5':
-                        key[1] += 0.05
-                        holding = True
-                
-                if not holding:
-                    elden_agent.keyboard.press('5')
-                    elden_agent.keys_pressed.append(['5', 0.1, time.time()])
+                press_key('5', 0.5)
             elif action == 9:
-                elden_agent.keyboard.press(kb.Key.shift_l)
-                #elden_agent.keys_pressed.append(kb.Key.shift_l)
-                elden_agent.keyboard.press('5')
-                #elden_agent.keys_pressed.append('5')
-                elden_agent.keyboard.release(kb.Key.shift_l)
-                elden_agent.keyboard.release('5')
+                press_key(kb.key.shift_l, 0.1)
+                press_key('5', 0.1)
             elif action == 10:
-                elden_agent.keyboard.press('r')
-                #elden_agent.keys_pressed.append('r')
-                elden_agent.keyboard.release('r')
+                press_key('r', 0.1)
             elif action == 11:
-                # Check for already holding space
-                holding = False
-                for key in elden_agent.keys_pressed:
-                    if type(key) != str and key[0] == kb.Key.space:
-                        key[1] += 0.05
-                        holding = True
-
-                if not holding:
-                    elden_agent.keyboard.press(kb.Key.space)
-                    elden_agent.keys_pressed.append([kb.Key.space, 0.1, time.time()])
-
+                press_key(kb.Key.space, 0.5)
             elif action == 12:
-                elden_agent.keyboard.press('f')
-                #elden_agent.keys_pressed.append('f')
-                elden_agent.keyboard.release('f')
+                press_key('f', 0.1)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
