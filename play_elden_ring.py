@@ -209,12 +209,12 @@ def custom_action(action):
             elif action == 6:
                 press_key('4', 0.1)
             elif action == 7:
-                press_key(kb.key.shift_l, 0.1)
+                press_key(kb.Key.shift_l, 0.1)
                 press_key('4', 0.1)
             elif action == 8:
                 press_key('5', 0.5)
             elif action == 9:
-                press_key(kb.key.shift_l, 0.1)
+                press_key(kb.Key.shift_l, 0.1)
                 press_key('5', 0.1)
             elif action == 10:
                 press_key('r', 0.1)
