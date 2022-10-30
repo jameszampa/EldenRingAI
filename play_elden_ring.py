@@ -131,7 +131,7 @@ def death_reset():
             with open('obs_log.txt', 'w') as f:
                 f.write(f"Dead: {True}")
                 f.write("\n")
-                f.write("Reward: {:.2f}".format(curr_reward))
+                f.write("FPS: {:.2f}".format(curr_reward))
                 f.write("\n")
                 f.write(f"Num resets: {curr_resets}")
             elden_agent.keyboard.release('w')
