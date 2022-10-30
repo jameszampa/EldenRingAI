@@ -138,6 +138,12 @@ def death_reset():
             elden_agent.keyboard.release('s')
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
+            elden_agent.keyboard.release('f')
+            elden_agent.keyboard.release('r')
+            elden_agent.keyboard.release('4')
+            elden_agent.keyboard.release('5')
+            elden_agent.keyboard.release(kb.Key.shift_l)
+            elden_agent.keyboard.release(kb.Key.space)
 
             for key in elden_agent.keys_pressed:
                 if type(key) == str:
