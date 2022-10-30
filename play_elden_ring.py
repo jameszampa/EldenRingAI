@@ -190,8 +190,15 @@ def custom_action(action):
                 elden_agent.keyboard.press('4')
                 elden_agent.keys_pressed.append('4')
             elif action == 8:
-                elden_agent.keyboard.press('5')
-                elden_agent.keys_pressed.append(['5', 0.5, time.time()])
+                holding = False
+                for key in elden_agent.keys_pressed:
+                    if type(key) != str and key[0] == '5':
+                        key[1] += 0.25
+                        holding = True
+                
+                if not holding:
+                    elden_agent.keyboard.press('5')
+                    elden_agent.keys_pressed.append(['5', 0.25, time.time()])
             elif action == 9:
                 elden_agent.keyboard.press(kb.Key.shift_l)
                 elden_agent.keys_pressed.append(kb.Key.shift_l)
@@ -201,8 +208,17 @@ def custom_action(action):
                 elden_agent.keyboard.press('r')
                 elden_agent.keys_pressed.append('r')
             elif action == 11:
-                elden_agent.keyboard.press(kb.Key.space)
-                elden_agent.keys_pressed.append([kb.Key.space, 1, time.time()])
+                # Check for already holding space
+                holding = False
+                for key in elden_agent.keys_pressed:
+                    if type(key) != str and key[0] == kb.Key.space:
+                        key[1] += 0.25
+                        holding = True
+
+                if not holding:
+                    elden_agent.keyboard.press(kb.Key.space)
+                    elden_agent.keys_pressed.append([kb.Key.space, 0.25, time.time()])
+
             elif action == 12:
                 elden_agent.keyboard.press('f')
             return Response(status=200)
