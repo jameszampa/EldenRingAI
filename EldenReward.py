@@ -169,6 +169,7 @@ class EldenReward:
                 if hp_reward > 0:
                     hp_reward /= 8
 
+            boss_name = ""
             if not self.seen_boss:
                 boss_name = self._get_boss_name(frame)
             boss_dmg_reward = 0
