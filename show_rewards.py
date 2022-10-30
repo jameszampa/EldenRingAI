@@ -28,11 +28,11 @@ while True:
     #print(rewardGen.boss_hp)
     
 
-    hp_image = frame[51:55, 150:150 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
-    #lower = np.array([0,150,75])
-    #upper = np.array([150,255,125])
-    lower = np.array([0,0,150])
-    upper = np.array([255,255,255])
+    hp_image = frame[51:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
+    lower = np.array([0,150,95])
+    upper = np.array([150,255,125])
+    #lower = np.array([0,0,150])
+    #upper = np.array([255,255,255])
     hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
     mask = cv2.inRange(hsv, lower, upper)
     matches = np.argwhere(mask==255)
