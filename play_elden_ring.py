@@ -116,6 +116,7 @@ def load_save():
 def death_reset():
     if request.method == 'POST':
         try:
+            elden_agent.keys_pressed = []
             print('DEATH RESET')
             update_status('Death reset')
             curr_reward = None
@@ -134,25 +135,18 @@ def death_reset():
                 f.write("FPS: {:.2f}".format(curr_reward))
                 f.write("\n")
                 f.write(f"Num resets: {curr_resets}")
-            elden_agent.keyboard.release('w')
-            elden_agent.keyboard.release('s')
-            elden_agent.keyboard.release('a')
-            elden_agent.keyboard.release('d')
-            elden_agent.keyboard.release('f')
-            elden_agent.keyboard.release('r')
-            elden_agent.keyboard.release('4')
-            elden_agent.keyboard.release('5')
-            elden_agent.keyboard.release(kb.Key.shift_l)
-            elden_agent.keyboard.release(kb.Key.space)
-
-            for key in elden_agent.keys_pressed:
-                if type(key) == str:
-                    elden_agent.keyboard.release(key)
-                    elden_agent.keys_pressed.remove(key)
-                else:
-                    elden_agent.keyboard.release(key[0])
-                    elden_agent.keys_pressed.remove(key)
-                    
+            
+            for i in range(10):
+                elden_agent.keyboard.release('w')
+                elden_agent.keyboard.release('s')
+                elden_agent.keyboard.release('a')
+                elden_agent.keyboard.release('d')
+                elden_agent.keyboard.release('f')
+                elden_agent.keyboard.release('r')
+                elden_agent.keyboard.release('4')
+                elden_agent.keyboard.release('5')
+                elden_agent.keyboard.release(kb.Key.shift_l)
+                elden_agent.keyboard.release(kb.Key.space)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
