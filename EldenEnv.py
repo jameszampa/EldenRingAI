@@ -167,10 +167,20 @@ class EldenEnv(gym.Env):
                            'parries': []}
         self.t_since_parry = None
         self.parry_detector = tf.saved_model.load('parry_detector')
+        self.prev_step_start = time.time()
 
 
     def step(self, action):
         t0 = time.time()
+        if time.time() - self.prev_step_start() > 10:
+            headers = {"Content-Type": "application/json"}
+            for i in range(10):
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                time.sleep(0.1)
+            requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+            requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
+        self.prev_step_start = time.time()
         parry_reward = 0
         if int(action) == 9:
             self.parry_dict['parries'].append(time.time() - self.t_start)
