@@ -292,7 +292,7 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
         
         self.reward = 0
-        self.rewardGen = EldenReward(1, logdir)
+        self.rewardGen = EldenReward(1, logdir, self.agent_ip)
         self.death = False
         self.t_start = time.time()
         self.done = False
@@ -545,7 +545,7 @@ if __name__ == "__main__":
     if not os.path.exists(logdir):
         os.makedirs(logdir)
 
-    env = EldenEnv(logdir)
+    env = EldenEnv('/dev/video0', '192.168.4.70', logdir)
     env.reset()
 
     model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
