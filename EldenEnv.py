@@ -238,7 +238,7 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
         
         self.reward = 0
-        self.rewardGen = EldenReward(1, self.agent_ip)
+        self.rewardGen = EldenReward(self.agent_ip)
         self.death = False
         self.done = False
         self.iteration = 0
