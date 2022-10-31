@@ -2,16 +2,14 @@ import os
 import cv2
 import gym
 import time
+import json
 import requests
 import numpy as np
 import pytesseract
 from gym import spaces
-from tensorboardX import SummaryWriter
-import json
 from threading import Thread
-import cv2
-import time
-import os
+from stable_baselines3 import PPO
+from tensorboardX import SummaryWriter
 
 
 TOTAL_ACTIONABLE_TIME = 120
@@ -534,3 +532,25 @@ class EldenEnv(gym.Env):
 
     def close (self):
         self.cap.release()
+
+ts = time.time()
+models_dir = f"models/{int(ts)}/"
+logdir = f"logs/{int(ts)}/"
+
+if not os.path.exists(models_dir):
+	os.makedirs(models_dir)
+
+if not os.path.exists(logdir):
+	os.makedirs(logdir)
+
+env = EldenEnv(logdir)
+env.reset()
+
+model = PPO('MlpPolicy', env, verbose=0, tensorboard_log=logdir)
+
+TIMESTEPS = 100000000
+iters = 0
+while True:
+	iters += 1
+	model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
+	model.save(f"{models_dir}/{TIMESTEPS*iters}")
