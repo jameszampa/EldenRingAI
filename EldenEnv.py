@@ -167,14 +167,16 @@ class EldenEnv(gym.Env):
                            'parries': []}
         self.t_since_parry = None
         self.parry_detector = tf.saved_model.load('parry_detector')
-        self.prev_step_start = time.time()
+        self.prev_step_end_ts = time.time()
         self.last_fps = []
 
 
     def step(self, action):
         print('step start')
         t0 = time.time()
-        # if (time.time() - self.prev_step_start) > 45:
+        if not self.first_step:
+            self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
+        # if (time.time() - self.prev_step_end_ts) > 45:
         #     headers = {"Content-Type": "application/json"}
         #     for i in range(10):
         #         requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
@@ -182,7 +184,7 @@ class EldenEnv(gym.Env):
         #         time.sleep(0.1)
         #     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
         #     requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
-        self.prev_step_start = time.time()
+        
         parry_reward = 0
         if int(action) == 9:
             self.parry_dict['parries'].append(time.time() - self.t_start)
@@ -326,6 +328,8 @@ class EldenEnv(gym.Env):
         #print(1 / (time.time() - t0))
         if time_to_sleep > 0:
             time.sleep(time_to_sleep)
+        self.logger.add_scalar('step_time', (time.time() - t0), self.iteration)
+        self.prev_step_end_ts = time.time()
         return observation, self.reward, self.done, info
     
     def reset(self):
