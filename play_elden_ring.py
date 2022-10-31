@@ -12,15 +12,11 @@ import re
 import datetime
 import shutil
 import moviepy.editor as mp
-from pydub import AudioSegment, effects
-import pyaudio
+from pydub import AudioSegment
 import wave
-import threading
 import time
 import subprocess
 import os
-#import tensorflow as tf
-import numpy as np
 import wave
 import base64
 
