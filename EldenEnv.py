@@ -36,7 +36,7 @@ MODEL_WIDTH = 800
 
 
 class EldenReward:
-    def __init__(self, logdir, ip) -> None:
+    def __init__(self, ip) -> None:
         self.seen_boss = False
 
         self.max_hp = 396
@@ -216,7 +216,7 @@ class ThreadedCamera(object):
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, src, ip, logdir):
+    def __init__(self, src, ip):
         super(EldenEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -240,7 +240,7 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
         
         self.reward = 0
-        self.rewardGen = EldenReward(1, logdir, self.agent_ip)
+        self.rewardGen = EldenReward(1, self.agent_ip)
         self.death = False
         self.done = False
         self.iteration = 0
