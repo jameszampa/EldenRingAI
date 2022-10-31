@@ -2,143 +2,38 @@ import os
 import re
 import json
 import time
-import wave
 import time
-import base64
-import random
-import shutil
 import secrets
-import hashlib
-import datetime
-import binascii
+import win32gui
 import subprocess
-import moviepy.editor as mp
-from pydub import AudioSegment
 from pynput import keyboard as kb
-from WindowManager import WindowMgr
 from flask import Flask, request, Response
 
 
-def l_endian(val):
-    """Takes bytes and returns little endian int32/64"""
-    l_hex = bytearray(val)
-    l_hex.reverse()
-    str_l = "".join(format(i, "02x") for i in l_hex)
-    return int(str_l, 16)
+class WindowMgr:
+    """Encapsulates some calls to the winapi for window management"""
 
+    def __init__ (self):
+        """Constructor"""
+        self._handle = None
 
-def get_slot_ls(file):
-    with open(file, "rb") as fh:
-        dat = fh.read()
+    def find_window(self, class_name, window_name=None):
+        """find a window by its class_name"""
+        self._handle = win32gui.FindWindow(class_name, window_name)
 
-        slot1 = dat[0x00000310 : 0x0028030F + 1]  # SLOT 1
-        slot2 = dat[0x00280320 : 0x050031F + 1]
-        slot3 = dat[0x500330 : 0x78032F + 1]
-        slot4 = dat[0x780340 : 0xA0033F + 1]
-        slot5 = dat[0xA00350 : 0xC8034F + 1]
-        slot6 = dat[0xC80360 : 0xF0035F + 1]
-        slot7 = dat[0xF00370 : 0x118036F + 1]
-        slot8 = dat[0x1180380 : 0x140037F + 1]
-        slot9 = dat[0x1400390 : 0x168038F + 1]
-        slot10 = dat[0x16803A0 : 0x190039F + 1]
-        return [slot1, slot2, slot3, slot4, slot5, slot6, slot7, slot8, slot9, slot10]
+    def _window_enum_callback(self, hwnd, wildcard):
+        """Pass to win32gui.EnumWindows() to check all the opened windows"""
+        if re.match(wildcard, str(win32gui.GetWindowText(hwnd))) is not None:
+            self._handle = hwnd
 
+    def find_window_wildcard(self, wildcard):
+        """find a window whose title matches the wildcard regex"""
+        self._handle = None
+        win32gui.EnumWindows(self._window_enum_callback, wildcard)
 
-def get_stats(file, char_slot):
-    """"""
-    # print(file, char_slot)
-    lvls = get_levels(file)
-    lv = lvls[char_slot - 1]
-    slots = get_slot_ls(file)
-
-    start_ind = 0
-    slot1 = slots[char_slot - 1]
-    indexes = []
-    for ind, b in enumerate(slot1):
-        if ind > 60000:
-            return None
-        try:
-            stats = [
-                l_endian(slot1[ind : ind + 1]),
-                l_endian(slot1[ind + 4 : ind + 5]),
-                l_endian(slot1[ind + 8 : ind + 9]),
-                l_endian(slot1[ind + 12 : ind + 13]),
-                l_endian(slot1[ind + 16 : ind + 17]),
-                l_endian(slot1[ind + 20 : ind + 21]),
-                l_endian(slot1[ind + 24 : ind + 25]),
-                l_endian(slot1[ind + 28 : ind + 29]),
-            ]
-            hp = l_endian(slot1[ind - 44 : ind - 40])
-
-            if sum(stats) == lv + 79 and l_endian(slot1[ind + 44 : ind + 46]) == lv:
-                start_ind = ind
-                lvl_ind = ind + 44
-                break
-
-        except:
-            continue
-
-    idx = ind
-    for i in range(8):
-        indexes.append(idx)
-        idx += 4
-
-    indexes.append(lvl_ind)  # Add the level location to the end o
-
-    fp = []
-    fp_inds = []
-    y = start_ind - 32
-
-    for i in range(3):
-        fp.append(l_endian(slot1[y : y + 2]))
-        fp_inds.append(y)
-        y += 4
-
-    hp = []
-    hp_inds = []
-    x = start_ind - 44
-
-    for i in range(3):
-        hp.append(l_endian(slot1[x : x + 2]))
-        hp_inds.append(x)
-        x += 4
-
-    stam = []
-    stam_inds = []
-    z = start_ind - 16
-
-    for i in range(3):
-        stam.append(l_endian(slot1[z : z + 2]))
-        stam_inds.append(z)
-        z += 4
-
-    return [
-        stats,
-        indexes,
-        hp_inds,
-        stam_inds,
-        fp_inds,
-    ]
-
-
-def get_levels(file):
-    with open(file, "rb") as fh:
-        dat = fh.read()
-
-    ind = 0x1901D0E + 34
-    lvls = []
-    for i in range(10):
-        l = dat[ind : ind + 2]
-
-        lvls.append(l_endian(l))
-        ind += 588
-    return lvls
-
-
-def _get_stats(char_slot):
-    stats = get_stats(r"C:/Users/James Zampa/AppData/Roaming/EldenRing/76561199402743988/ER0000.sl2", char_slot)
-    return stats[0]
-
+    def set_foreground(self):
+        """put the window in the foreground"""
+        win32gui.SetForegroundWindow(self._handle)
 
 class EldenAgent:
     def __init__(self) -> None:
