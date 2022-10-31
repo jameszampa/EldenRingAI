@@ -255,7 +255,7 @@ class EldenEnv(gym.Env):
                 self.reward = -10000000
                 self.rewardGen.time_since_death = time.time()
             else:
-                if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.75:
+                if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.5:
                     pass
                 else:
                     if int(action) == 10:
