@@ -10,3 +10,6 @@ twitchbot.py
 parries/*
 parry_detector/*
 log.txt
+lowest_boss_hp.txt
+tmp.wav
+obs_log.txt
