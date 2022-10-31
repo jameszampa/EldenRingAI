@@ -45,6 +45,8 @@ with open('vigor_chart.csv', 'r') as v_chart:
 
 class EldenReward:
     def __init__(self, char_slot, logdir, ip) -> None:
+        self.previous_stats = None
+        self.current_stats = None
         self.seen_boss = False
 
         self.max_hp = None
