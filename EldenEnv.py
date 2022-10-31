@@ -1,8 +1,6 @@
-import os
 import cv2
 import gym
 import time
-import json
 import requests
 import numpy as np
 import pytesseract
