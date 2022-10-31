@@ -325,6 +325,7 @@ class EldenEnv(gym.Env):
         return observation, self.reward, self.done, info
     
     def reset(self):
+        time.sleep(5)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
