@@ -60,6 +60,7 @@ class EldenReward:
         self.time_till_fight = 120
         self.time_since_reset = time.time()
         self.time_since_check_for_boss = time.time()
+        self.time_alive_multiplier = 1
 
 
     def _get_boss_name(self, frame):
@@ -166,8 +167,6 @@ class EldenReward:
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
                     percent_through_fight_reward = (1 - self.boss_hp) * 0.5
                     self.time_alive_multiplier = 1 - self.boss_hp
-                    if self.boss_hp < self.min_boss_hp:
-                        self.min_boss_hp = self.boss_hp
                 else:
                     percent_through_fight_reward = 0
             else:
