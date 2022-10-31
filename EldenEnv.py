@@ -172,15 +172,16 @@ class EldenEnv(gym.Env):
 
 
     def step(self, action):
+        print('step start')
         t0 = time.time()
-        if (time.time() - self.prev_step_start) > 45:
-            headers = {"Content-Type": "application/json"}
-            for i in range(10):
-                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                time.sleep(0.1)
-            requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
-            requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
+        # if (time.time() - self.prev_step_start) > 45:
+        #     headers = {"Content-Type": "application/json"}
+        #     for i in range(10):
+        #         requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+        #         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        #         time.sleep(0.1)
+        #     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+        #     requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
         self.prev_step_start = time.time()
         parry_reward = 0
         if int(action) == 9:
@@ -212,16 +213,16 @@ class EldenEnv(gym.Env):
         #             parry_reward = 1
         #     except Exception as e:
         #         print(str(e))
-
+        print('focus window')
         t1 = time.time()
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
+        print('release keys')
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
         frame = self.cap.frame
-
+        print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
 
@@ -238,6 +239,7 @@ class EldenEnv(gym.Env):
 
         self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
 
+        print('custom action')
         if not self.death:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
@@ -258,7 +260,7 @@ class EldenEnv(gym.Env):
                         self.time_since_r = time.time()
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
-                    #time.sleep(1/30)
+                    
                     self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
@@ -291,6 +293,7 @@ class EldenEnv(gym.Env):
                     time.sleep(0.1)
 
             self.done = True
+        print('final steps')
         t4 = time.time()
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
@@ -318,10 +321,16 @@ class EldenEnv(gym.Env):
         print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         print("t4-t_end took {:.5f} seconds".format(t_end - t4))
         self.last_fps.append(1 / (t_end - t0))
+        desired_fps = (1 / 15) 
+        time_to_sleep = desired_fps - (t_end - t0)
         #print(1 / (time.time() - t0))
+        if time_to_sleep > 0:
+            time.sleep(time_to_sleep)
         return observation, self.reward, self.done, info
     
     def reset(self):
+        self.done = False
+        time.sleep(5)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
@@ -353,7 +362,6 @@ class EldenEnv(gym.Env):
 
         # check frozen load screen
         reset_idx = 0
-        self.done = False
         frame = self.cap.frame
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
