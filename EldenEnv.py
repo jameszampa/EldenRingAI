@@ -9,7 +9,6 @@ import pytesseract
 from gym import spaces
 from threading import Thread
 from stable_baselines3 import PPO
-from tensorboardX import SummaryWriter
 
 
 TOTAL_ACTIONABLE_TIME = 120
@@ -34,28 +33,17 @@ IMG_WIDTH = 1920
 IMG_HEIGHT = 1080
 MODEL_HEIGHT = 450
 MODEL_WIDTH = 800
-CLASS_NAMES = ['successful_parries', 'missed_parries']
-HP_CHART = {}
-with open('vigor_chart.csv', 'r') as v_chart:
-    for line in v_chart.readlines():
-        stat_point = int(line.split(',')[0])
-        hp_amount = int(line.split(',')[1])
-        HP_CHART[stat_point] = hp_amount
 
 
 class EldenReward:
-    def __init__(self, char_slot, logdir, ip) -> None:
-        self.previous_stats = None
-        self.current_stats = None
+    def __init__(self, logdir, ip) -> None:
         self.seen_boss = False
 
-        self.max_hp = None
+        self.max_hp = 396
         self.prev_hp = None
         self.curr_hp = None
 
         self.hp_ratio = 0.403
-
-        self.character_slot = char_slot
 
         self.death_ratio = 0.005
 
@@ -65,9 +53,6 @@ class EldenReward:
         self.death = False
 
         self.agent_ip = ip
-        self._request_stats()
-        self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
-        self.iteration = 0
         self.boss_hp = None
         self.time_since_last_hp_change = time.time()
         self.time_since_last_boss_hp_change = time.time()
@@ -76,27 +61,7 @@ class EldenReward:
         self.boss_hp_target_window = 5
         self.time_till_fight = 120
         self.time_since_reset = time.time()
-        self.min_boss_hp = 1
         self.time_since_check_for_boss = time.time()
-        
-
-    def _request_stats(self):
-        headers = {"Content-Type": "application/json"}
-        response = requests.get(f"http://{self.agent_ip}:6000/stats/{self.character_slot}", headers=headers)
-        stats = response.json()
-        #print(stats)
-
-        self.previous_stats = self.current_stats
-        self.current_stats = [stats['vigor'],
-                              stats['mind'],
-                              stats['endurance'],
-                              stats['strength'],
-                              stats['dexterity'],
-                              stats['intelligence'],
-                              stats['faith'],
-                              stats['arcane']]
-        self.max_hp = HP_CHART[self.current_stats[0]]
-        self.time_alive_multiplier = 1
 
 
     def _get_boss_name(self, frame):
@@ -110,14 +75,11 @@ class EldenReward:
 
         
     def update(self, frame):
-        self.iteration += 1
-
         if self.curr_hp is None:
             self.curr_hp = self.max_hp
 
         hp_reward = 0
         if not self.death:
-            t0 = time.time()
             hp_image = frame[51:55, 155:155 + int(self.max_hp * self.hp_ratio) - 20]
             lower = np.array([0,150,95])
             upper = np.array([150,255,125])
@@ -137,7 +99,6 @@ class EldenReward:
                 self.prev_hp = self.curr_hp
                 self.curr_hp = (len(matches) / (hp_image.shape[1] * hp_image.shape[0])) * self.max_hp
             
-            t1 = time.time()
             if not self.prev_hp is None and not self.curr_hp is None:
                 hp_reward = (self.curr_hp - self.prev_hp) / self.max_hp
                 if hp_reward != 0:
@@ -169,9 +130,6 @@ class EldenReward:
                         boss_find_reward = 0
                 else:
                     boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
-                
-        self.logger.add_scalar('curr_hp', self.curr_hp / self.max_hp, self.iteration)
-        
         boss_hp = 1
         if self.seen_boss and not self.death:
             boss_hp_image = frame[869:873, 475:1460]
@@ -218,8 +176,6 @@ class EldenReward:
                 percent_through_fight_reward = 0
         else:
             percent_through_fight_reward = 0
-        self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
-
         if not self.death and not self.curr_hp is None:
             self.death = (self.curr_hp / self.max_hp) <= self.death_ratio
             time_alive = time.time() - self.time_since_death
@@ -245,12 +201,8 @@ class ThreadedCamera(object):
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
         (self.status, self.frame) = self.capture.read()
-        # FPS = 1/X
-        # X = desired FPS
         self.FPS = 1/30
         self.FPS_MS = int(self.FPS * 1000)
-        
-        # Start frame retrieval thread
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
@@ -260,11 +212,6 @@ class ThreadedCamera(object):
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
             time.sleep(self.FPS)
-            
-    def show_frame(self):
-        cv2.imshow('frame', self.frame)
-        cv2.waitKey(self.FPS_MS)
-
 
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -281,7 +228,6 @@ class EldenEnv(gym.Env):
 
         self.cap = ThreadedCamera(src)
         self.agent_ip = ip
-        self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
@@ -296,49 +242,29 @@ class EldenEnv(gym.Env):
         self.reward = 0
         self.rewardGen = EldenReward(1, logdir, self.agent_ip)
         self.death = False
-        self.t_start = time.time()
         self.done = False
         self.iteration = 0
         self.first_step = False
         self.consecutive_deaths = 0
-        self.locked_on = False
-        self.num_runs = 0
-        self.max_reward = None
         self.time_since_r = time.time()
-        self.reward_history = []
-        self.parry_dict = {'vod_duration':None,
-                           'parries': []}
-        self.t_since_parry = None
-        self.prev_step_end_ts = time.time()
-        self.last_fps = []
+        self.t_start = time.time()
 
 
     def step(self, action):
         t0 = time.time()
-        if not self.first_step:
-            self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
-             
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
         frame = self.cap.frame
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, _ = self.rewardGen.update(frame)
-
-        self.logger.add_scalar('time_alive', time_alive, self.iteration)
-        self.logger.add_scalar('percent_through', percent_through, self.iteration)
-        self.logger.add_scalar('hp', hp, self.iteration)
-        self.logger.add_scalar('dmg_reward', dmg_reward, self.iteration)
-        self.logger.add_scalar('find_reward', find_reward, self.iteration)
-        self.logger.add_scalar('parry_reward', 0, self.iteration)
         
         if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
-        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + 0
+        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward
 
         if not self.death:
-            # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
                 for i in range(10):
@@ -357,11 +283,9 @@ class EldenEnv(gym.Env):
                         self.time_since_r = time.time()
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
-                    
                     self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
-            # if we load in and die with 5 seconds, restart game because we are frozen on a black screen
             if self.first_step:
                 self.consecutive_deaths += 1
                 if self.consecutive_deaths > 5:
@@ -372,13 +296,10 @@ class EldenEnv(gym.Env):
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
                     time.sleep(180)
-
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
-
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             else:
@@ -387,56 +308,28 @@ class EldenEnv(gym.Env):
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                     requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
                     time.sleep(0.1)
-
             self.done = True
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         info = {}
         self.first_step = False
         self.iteration += 1
-
         if self.reward < -1:
             self.reward = -1
         if self.reward > 1:
             self.reward = 1
-
-        if self.max_reward is None:
-            self.max_reward = self.reward
-        elif self.max_reward < self.reward:
-            self.max_reward = self.reward
-
-        self.logger.add_scalar('reward', self.reward, self.iteration)
-        self.reward_history.append(self.reward)
-
         t_end = time.time()
-        self.last_fps.append(1 / (t_end - t0))
         desired_fps = (1 / 15)
         time_to_sleep = desired_fps - (t_end - t0)
         if time_to_sleep > 0:
             time.sleep(time_to_sleep)
-        self.logger.add_scalar('step_time', (time.time() - t0), self.iteration)
-        self.prev_step_end_ts = time.time()
         return observation, self.reward, self.done, info
     
     def reset(self):
         self.done = False
         time.sleep(5)
-        self.num_runs += 1
-        self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
-        json_message = {'text': 'Check for frozen screen'}
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
-
-        avg_fps = 0
-        for i in range(len(self.last_fps)):
-            avg_fps += self.last_fps[i]
-        self.last_fps = []
-        if len(self.last_fps) > 0:
-            avg_fps = avg_fps / len(self.last_fps)
-        self.logger.add_scalar('avg_fps', avg_fps, self.num_runs)
 
         frame = self.cap.frame
         next_text_image = frame[1015:1040, 155:205]
@@ -495,25 +388,12 @@ class EldenEnv(gym.Env):
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.done = False
         self.first_step = True
-        self.locked_on = False
-        self.rewardGen.curr_boss_hp = 3200
-        self.max_reward = None
         self.rewardGen.seen_boss = False
         self.rewardGen.time_since_seen_boss = time.time()
         self.rewardGen.prev_hp = self.rewardGen.max_hp
         self.rewardGen.curr_hp = self.rewardGen.max_hp
         self.rewardGen.time_since_reset = time.time()
         self.rewardGen.boss_hp = 1
-        if len(self.reward_history) > 0:
-            total_r = 0
-            for r in self.reward_history:
-                total_r += r
-            avg_r = total_r / len(self.reward_history)
-            self.logger.add_scalar('average_reward_per_run', avg_r, self.num_runs)
-        self.reward_history = []
-        self.parry_dict = {'vod_duration':None,
-                           'parries': []}
-
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
@@ -522,10 +402,6 @@ class EldenEnv(gym.Env):
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
-
-        json_message = {'text': 'Step'}
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
 
         return observation
 
@@ -537,24 +413,8 @@ class EldenEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    ts = time.time()
-    models_dir = f"models/{int(ts)}/"
-    logdir = f"logs/{int(ts)}/"
-
-    if not os.path.exists(models_dir):
-        os.makedirs(models_dir)
-
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-
-    env = EldenEnv('/dev/video0', '192.168.4.70', logdir)
+    env = EldenEnv('/dev/video0', '192.168.4.70')
     env.reset()
 
-    model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
-
-    TIMESTEPS = 100000000
-    iters = 0
-    while True:
-        iters += 1
-        model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
-        model.save(f"{models_dir}/{TIMESTEPS*iters}")
+    model = PPO('MlpPolicy', env, verbose=1)
+    model.learn(total_timesteps=100000000, reset_num_timesteps=False, tb_log_name=f"PPO")
