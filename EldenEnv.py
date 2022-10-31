@@ -243,7 +243,7 @@ class EldenEnv(gym.Env):
         self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
 
         print('custom action')
-        if not self.death:
+        if not self.death and not self.done:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
