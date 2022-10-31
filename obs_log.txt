@@ -1,1 +1,1 @@
-Dead: True
+Num resets: 34
