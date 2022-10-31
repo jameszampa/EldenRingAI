@@ -533,24 +533,26 @@ class EldenEnv(gym.Env):
     def close (self):
         self.cap.release()
 
-ts = time.time()
-models_dir = f"models/{int(ts)}/"
-logdir = f"logs/{int(ts)}/"
 
-if not os.path.exists(models_dir):
-	os.makedirs(models_dir)
+if __name__ == "__main__":
+    ts = time.time()
+    models_dir = f"models/{int(ts)}/"
+    logdir = f"logs/{int(ts)}/"
 
-if not os.path.exists(logdir):
-	os.makedirs(logdir)
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
 
-env = EldenEnv(logdir)
-env.reset()
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
 
-model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
+    env = EldenEnv(logdir)
+    env.reset()
 
-TIMESTEPS = 100000000
-iters = 0
-while True:
-	iters += 1
-	model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
-	model.save(f"{models_dir}/{TIMESTEPS*iters}")
+    model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
+
+    TIMESTEPS = 100000000
+    iters = 0
+    while True:
+        iters += 1
+        model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
+        model.save(f"{models_dir}/{TIMESTEPS*iters}")
