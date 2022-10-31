@@ -175,16 +175,15 @@ class EldenEnv(gym.Env):
         print('step start')
         t0 = time.time()
         if not self.first_step:
+            if t0 - self.prev_step_end_ts > 5:
+                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+                for i in range(10):
+                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                    time.sleep(0.1)
+                self.done = True
             self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
-        # if (time.time() - self.prev_step_end_ts) > 45:
-        #     headers = {"Content-Type": "application/json"}
-        #     for i in range(10):
-        #         requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-        #         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-        #         time.sleep(0.1)
-        #     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
-        #     requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
-        
+            
         parry_reward = 0
         if int(action) == 9:
             self.parry_dict['parries'].append(time.time() - self.t_start)
