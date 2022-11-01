@@ -50,6 +50,7 @@ def screen_shot_elden_ring():
             print('Screenshot')
             # img_str = elden_agent.w.screen_shot()
             img = pyautogui.screenshot()
+            img = np.asarray(img)
             img = cv2.imencode('.jpg', img)[1]
             img_str = base64.b64encode(img).decode()
             return json.dumps({'img':img_str})
