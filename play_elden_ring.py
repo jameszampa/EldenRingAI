@@ -42,7 +42,7 @@ def update_status(text):
 
 
 @app.route('/action/screen_shot', methods=["POST"])
-def load_save():
+def screen_shot_elden_ring():
     if request.method == 'POST':
         try:
             print('Screenshot')
