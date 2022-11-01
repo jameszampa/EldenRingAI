@@ -3,7 +3,7 @@ import win32ui
 import win32con
 import re
 import base64
-
+import numpy as np
 
 class WindowMgr:
     """Encapsulates some calls to the winapi for window management"""

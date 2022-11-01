@@ -15,7 +15,7 @@ while True:
     headers = {"Content-Type": "application/json"}
     response = requests.post(f"http://192.168.4.70:6000/action/screen_shot", headers=headers)
 
-    #print(response.json())
+    print(response.json())
 
     frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
     frame = np.fromstring(frame, np.uint8)
