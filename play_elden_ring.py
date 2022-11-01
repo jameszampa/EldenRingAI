@@ -51,7 +51,7 @@ def screen_shot_elden_ring():
             img = elden_agent.w.screen_shot()
             img = np.asarray(img)
             img = cv2.imencode('.jpg', img)[1]
-            base64.b64encode(bmpstr).decode()
+            img_str = base64.b64encode(img).decode()
             return json.dumps({'img':img_str})
         except Exception as e:
             return json.dumps({'error':str(e)})
