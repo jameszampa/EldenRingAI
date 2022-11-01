@@ -48,5 +48,5 @@ class WindowMgr:
         saveDC.DeleteDC()
         mfcDC.DeleteDC()
         win32gui.ReleaseDC(hdesktop, hwndDC)
-        return base64.b64encode(bmpstr)
+        return base64.b64encode(bmpstr).decode()
 
