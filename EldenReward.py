@@ -170,7 +170,7 @@ class EldenReward:
                 if hp_reward != 0:
                     self.time_since_last_hp_change = time.time()
                 if hp_reward > 0:
-                    hp_reward /= 4
+                    hp_reward /= 10
                 self.hp_history.append(hp_reward)
                 # Use the hp history to effect reward, hopefully making taking damage more punishing
                 num_samples = 15 if len(self.hp_history) > 15 else len(self.hp_history)
@@ -232,7 +232,7 @@ class EldenReward:
             self.boss_hp = 1
 
         if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
-            boss_dmg_reward = (self.boss_hp - boss_hp) * 10
+            boss_dmg_reward = (self.boss_hp - boss_hp) * 5
             if boss_dmg_reward < 0:
                 boss_dmg_reward = 0
             self.boss_hp = boss_hp
@@ -256,7 +256,7 @@ class EldenReward:
                     elif boss_min > self.boss_hp_history[-(i + 1)]:
                         boss_min = self.boss_hp_history[-(i + 1)]
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
-                    percent_through_fight_reward = (1 - self.boss_hp) * 0.5
+                    percent_through_fight_reward = (1 - self.boss_hp) * 0.75
                     self.time_alive_multiplier = 1 - self.boss_hp
                     if self.boss_hp < self.min_boss_hp:
                         self.min_boss_hp = self.boss_hp
