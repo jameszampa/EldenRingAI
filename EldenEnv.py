@@ -132,8 +132,8 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
 
-        src = '/dev/video0'
-        self.cap = ThreadedCamera(src)
+        #src = '/dev/video0'
+        #self.cap = ThreadedCamera(src)
         self.agent_ip = '192.168.4.70'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
 
@@ -223,7 +223,13 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        frame = self.cap.frame
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
+
+        frame = base64.decodebytes(response.json()['img'])
+        frame = np.fromstring(frame, np.uint8)
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)

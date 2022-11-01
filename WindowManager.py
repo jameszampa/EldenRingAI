@@ -1,5 +1,8 @@
 import win32gui
+import win32ui
+import win32con
 import re
+import base64
 
 
 class WindowMgr:
@@ -26,3 +29,24 @@ class WindowMgr:
     def set_foreground(self):
         """put the window in the foreground"""
         win32gui.SetForegroundWindow(self._handle)
+
+    def screen_shot(self):
+        left, top, right, bot = win32gui.GetWindowRect(self._handle)
+        w = right - left
+        h = bot - top
+        hdesktop = win32gui.GetDesktopWindow()
+        hwndDC = win32gui.GetWindowDC(hdesktop)
+        mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+        saveDC = mfcDC.CreateCompatibleDC()
+        saveBitMap = win32ui.CreateBitmap()
+        saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+        saveDC.SelectObject(saveBitMap)
+        result = saveDC.BitBlt((0, 0), (w, h), mfcDC, (left, top), win32con.SRCCOPY)
+        bmpinfo = saveBitMap.GetInfo()
+        bmpstr = saveBitMap.GetBitmapBits(True)
+        win32gui.DeleteObject(saveBitMap.GetHandle())
+        saveDC.DeleteDC()
+        mfcDC.DeleteDC()
+        win32gui.ReleaseDC(hdesktop, hwndDC)
+        return base64.b64encode(bmpstr).decode()
+

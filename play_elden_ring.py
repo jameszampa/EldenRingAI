@@ -41,6 +41,19 @@ def update_status(text):
         f.write(text)
 
 
+@app.route('/action/screen_shot', methods=["POST"])
+def load_save():
+    if request.method == 'POST':
+        try:
+            print('Screenshot')
+            img_str = elden_agent.w.screen_shot()
+            return json.dumps({'img':img_str})
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
+
 @app.route('/action/focus_window', methods=["POST"])
 def focus_window():
     if request.method == 'POST':
