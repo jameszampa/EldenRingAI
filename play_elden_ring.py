@@ -48,11 +48,10 @@ def screen_shot_elden_ring():
     if request.method == 'POST':
         try:
             print('Screenshot')
-            # img_str = elden_agent.w.screen_shot()
-            img = pyautogui.screenshot()
+            img = elden_agent.w.screen_shot()
             img = np.asarray(img)
             img = cv2.imencode('.jpg', img)[1]
-            img_str = base64.b64encode(img).decode()
+            base64.b64encode(bmpstr).decode()
             return json.dumps({'img':img_str})
         except Exception as e:
             return json.dumps({'error':str(e)})

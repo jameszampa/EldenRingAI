@@ -41,12 +41,13 @@ class WindowMgr:
         saveBitMap = win32ui.CreateBitmap()
         saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
         saveDC.SelectObject(saveBitMap)
-        result = saveDC.BitBlt((0, 0), (w, h), mfcDC, (left, top), win32con.SRCCOPY)
-        bmpinfo = saveBitMap.GetInfo()
-        bmpstr = saveBitMap.GetBitmapBits(True)
+        saveDC.BitBlt((0, 0), (w, h), mfcDC, (left, top), win32con.SRCCOPY)
+        signedIntsArray = saveBitMap.GetBitmapBits(True)
+        img = np.fromstring(signedIntsArray, dtype='uint8')
+        img.shape = (h, w, 4)
         win32gui.DeleteObject(saveBitMap.GetHandle())
         saveDC.DeleteDC()
         mfcDC.DeleteDC()
         win32gui.ReleaseDC(hdesktop, hwndDC)
-        return base64.b64encode(bmpstr).decode()
+        return img
 
