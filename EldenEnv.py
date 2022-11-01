@@ -94,8 +94,9 @@ def path_to_audio(path):
 
 class ThreadedCamera(object):
     def __init__(self, src=0):
+        os.system('sudo chmod 777 /dev/video0')
         self.capture = cv2.VideoCapture(src)
-        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
         (self.status, self.frame) = self.capture.read()
