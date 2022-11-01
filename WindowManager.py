@@ -45,6 +45,8 @@ class WindowMgr:
         signedIntsArray = saveBitMap.GetBitmapBits(True)
         img = np.fromstring(signedIntsArray, dtype='uint8')
         img.shape = (h, w, 4)
+        img = img[...,:3]
+        img = np.ascontiguousarray(img)
         win32gui.DeleteObject(saveBitMap.GetHandle())
         saveDC.DeleteDC()
         mfcDC.DeleteDC()
