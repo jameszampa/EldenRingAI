@@ -62,6 +62,7 @@ class EldenReward:
         self.time_since_reset = time.time()
         self.min_boss_hp = 1
         self.time_since_check_for_boss = time.time()
+        self.hp_history = []
         
 
 
@@ -139,6 +140,7 @@ class EldenReward:
 
 
         hp_reward = 0
+        total_hp_reward = 0
         if not self.death:
             t0 = time.time()
             # if self.time_since_last_hp_change > 1.0:
@@ -168,7 +170,14 @@ class EldenReward:
                 if hp_reward != 0:
                     self.time_since_last_hp_change = time.time()
                 if hp_reward > 0:
-                    hp_reward /= 8
+                    hp_reward /= 4
+                self.hp_history.append(hp_reward)
+                # Use the hp history to effect reward, hopefully making taking damage more punishing
+                num_samples = 15 if len(self.hp_history) > 15 else len(self.hp_history)
+                for i in range(num_samples):
+                    total_hp_reward += self.hp_history[-(i + 1)]
+                
+
 
             boss_name = ""
             if not self.seen_boss and time.time() - self.time_since_check_for_boss > 2:
@@ -222,7 +231,7 @@ class EldenReward:
             self.boss_hp = 1
 
         if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
-            boss_dmg_reward = (self.boss_hp - boss_hp) * 15
+            boss_dmg_reward = (self.boss_hp - boss_hp) * 10
             if boss_dmg_reward < 0:
                 boss_dmg_reward = 0
             self.boss_hp = boss_hp
@@ -269,7 +278,7 @@ class EldenReward:
             self.death = (self.curr_hp / self.max_hp) <= self.death_ratio
             time_alive = time.time() - self.time_since_death
             if self.seen_boss:
-                time_alive_reward = (time_alive * 0.001) * (self.time_alive_multiplier)
+                time_alive_reward = (time_alive * 0.01) * (self.time_alive_multiplier)
             else:
                 time_alive_reward = 0
             if self.death:
@@ -280,6 +289,6 @@ class EldenReward:
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
                 self.boss_hp_history = []
-                return time_alive_reward, percent_through_fight_reward, hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
             else:
-                return time_alive_reward, percent_through_fight_reward, hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
