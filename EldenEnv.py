@@ -110,13 +110,13 @@ class ThreadedCamera(object):
         self.thread.start()
         
     def update(self):
-        while True:
-            if self.capture.isOpened():
-                (self.status, self.frame) = self.capture.read()
+        while self.capture.isOpened():
+            (self.status, self.frame) = self.capture.read()
             time.sleep(self.FPS)
             
     def close(self):
         self.capture.release()
+        self.thread.join()
 
 
 class EldenEnv(gym.Env):
