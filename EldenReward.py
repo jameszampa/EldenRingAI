@@ -196,20 +196,21 @@ class EldenReward:
             
             if not self.time_since_seen_boss is None:
                 time_since_boss = time.time() - self.time_since_seen_boss
-                if time_since_boss < boss_timeout:
-                    if not self.seen_boss:
-                        boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
-                    else:
-                        boss_find_reward = 0
-                    try:
-                        #dmg = self._get_boss_dmg(frame)
-                        #self.curr_boss_hp -= dmg
-                        #boss_dmg_reward = 0
-                        pass
-                    except:
-                        pass
-                else:
-                    boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
+                boss_find_reward = 0
+                # if time_since_boss < boss_timeout:
+                #     if not self.seen_boss:
+                #         boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
+                #     else:
+                #         boss_find_reward = 0
+                #     try:
+                #         #dmg = self._get_boss_dmg(frame)
+                #         #self.curr_boss_hp -= dmg
+                #         #boss_dmg_reward = 0
+                #         pass
+                #     except:
+                #         pass
+                # else:
+                #     boss_find_reward = -time_since_boss / TOTAL_ACTIONABLE_TIME
                 
             t2 = time.time()
             # if p_count < 10:
