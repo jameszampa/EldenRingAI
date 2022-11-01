@@ -11,7 +11,11 @@ rewardGen = EldenReward(1, "templogs")
 while True:
     t0 = time.time()
     headers = {"Content-Type": "application/json"}
+    response = requests.post(f"http://192.168.4.70:6000/action/focus_window", headers=headers)
+    headers = {"Content-Type": "application/json"}
     response = requests.post(f"http://192.168.4.70:6000/action/screen_shot", headers=headers)
+
+    #print(response.json())
 
     frame = base64.decodebytes(response.json()['img'])
     frame = np.fromstring(frame, np.uint8)
