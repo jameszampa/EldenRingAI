@@ -18,7 +18,7 @@ env = EldenEnv(logdir)
 env.reset()
 TIMESTEPS = 100000000
 
-model = PPO('CnnPolicy', env, tensorboard_log=logdir, n_steps=2048 * 25)
+model = PPO('CnnPolicy', env, tensorboard_log=logdir, n_steps=32768)
 
 iters = 0
 while True:
