@@ -24,6 +24,7 @@ import numpy as np
 import wave
 import base64
 import pyautogui
+import cv2
 
 class EldenAgent:
     def __init__(self) -> None:
