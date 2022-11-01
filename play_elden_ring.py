@@ -23,6 +23,7 @@ import os
 import numpy as np
 import wave
 import base64
+import pyaudiogui
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -46,7 +47,10 @@ def screen_shot_elden_ring():
     if request.method == 'POST':
         try:
             print('Screenshot')
-            img_str = elden_agent.w.screen_shot()
+            # img_str = elden_agent.w.screen_shot()
+            img = pyautogui.screenshot()
+            img = cv2.imencode('.jpg', img)[1]
+            img_str = base64.b64encode(img).decode()
             return json.dumps({'img':img_str})
         except Exception as e:
             return json.dumps({'error':str(e)})

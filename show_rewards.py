@@ -17,8 +17,8 @@ while True:
 
     #print(response.json())
 
-    #frame = base64.decodebytes()
-    frame = np.fromstring(response.json()['img'], np.uint8)
+    frame = base64.decodebytes(response.json()['img'])
+    frame = np.fromstring(frame, np.uint8)
     frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
