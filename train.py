@@ -18,10 +18,10 @@ env = EldenEnv(logdir)
 env.reset()
 TIMESTEPS = 100000000
 
-model = PPO('MlpPolicy', env, tensorboard_log=logdir, n_steps=TIMESTEPS, batch_size=64, n_epochs=10)
+model = PPO('MlpPolicy', env, tensorboard_log=logdir, n_steps=2048 * 100)
 
 iters = 0
 while True:
 	iters += 1
-	model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
+	model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=True, tb_log_name=f"PPO")
 	model.save(f"{models_dir}/{TIMESTEPS*iters}")
