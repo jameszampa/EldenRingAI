@@ -23,7 +23,7 @@ import os
 import numpy as np
 import wave
 import base64
-import pyaudiogui
+import pyautogui
 
 class EldenAgent:
     def __init__(self) -> None:
