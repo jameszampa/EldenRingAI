@@ -16,10 +16,10 @@ if not os.path.exists(logdir):
 
 env = EldenEnv(logdir)
 env.reset()
-
-model = PPO('MlpPolicy', env, tensorboard_log=logdir)
-
 TIMESTEPS = 100000000
+
+model = PPO('MlpPolicy', env, tensorboard_log=logdir, n_steps=TIMESTEPS, batch_size=64, n_epochs=10)
+
 iters = 0
 while True:
 	iters += 1
