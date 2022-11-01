@@ -257,7 +257,7 @@ class EldenReward:
                         boss_min = self.boss_hp_history[-(i + 1)]
                 if abs(boss_max - boss_min) < self.boss_hp_target_range:
                     percent_through_fight_reward = (1 - self.boss_hp) * 0.75
-                    self.time_alive_multiplier = 1 - self.boss_hp
+                    self.time_alive_multiplier = (1 - self.boss_hp) * 0.25
                     if self.boss_hp < self.min_boss_hp:
                         self.min_boss_hp = self.boss_hp
                 else:
