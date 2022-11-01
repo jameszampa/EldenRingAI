@@ -406,6 +406,8 @@ class EldenEnv(gym.Env):
                 lost_connection = True
         
         if len(loading_screen_history) > 30*30 or lost_connection:
+            print(f"Lost connection: {lost_connection}")
+            print(f"Loading Screen Length: {len(loading_screen_history)}")
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
