@@ -115,9 +115,8 @@ class ThreadedCamera(object):
                 (self.status, self.frame) = self.capture.read()
             time.sleep(self.FPS)
             
-    def show_frame(self):
-        cv2.imshow('frame', self.frame)
-        cv2.waitKey(self.FPS_MS)
+    def close(self):
+        self.capture.release()
 
 
 class EldenEnv(gym.Env):
@@ -335,6 +334,7 @@ class EldenEnv(gym.Env):
     
     def reset(self):
         self.done = False
+        self.cap = ThreadedCamera('/dev/video0')
         time.sleep(5)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
