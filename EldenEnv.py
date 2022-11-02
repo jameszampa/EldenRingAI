@@ -371,8 +371,12 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         # check frozen load screen
-        reset_idx = 0
-        frame = self.cap.frame
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
+
+        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
+        frame = np.fromstring(frame, np.uint8)
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
