@@ -6,7 +6,6 @@ import subprocess
 
 from get_levels import get_stats
 from pynput import keyboard as kb
-from WindowManager import WindowMgr
 from flask import Flask, request, Response
 import re
 import datetime

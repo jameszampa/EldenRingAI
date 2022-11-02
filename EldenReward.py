@@ -47,7 +47,7 @@ class EldenReward:
         self.curr_boss_hp = 3200
         #self.prev_boss_hp = None
 
-        self.agent_ip = '192.168.4.70'
+        self.agent_ip = 'localhost'
         self._request_stats()
         self.boss_max_hp = 3200
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))

@@ -316,27 +316,19 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         # check frozen load screen
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-        frame = np.fromstring(frame, np.uint8)
-        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+        img = ImageGrab.grab()
+        frame = np.asarray(img)
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
         loading_screen = "Next" in next_text
         loading_screen_history = []
         num_in_row = 0
-        min_look = 15
+        min_look = 30
         time.sleep(2)
         while True:
-            headers = {"Content-Type": "application/json"}
-            response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-            frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-            frame = np.fromstring(frame, np.uint8)
-            frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+            img = ImageGrab.grab()
+            frame = np.asarray(img)
 
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
@@ -370,6 +362,7 @@ class EldenEnv(gym.Env):
         if (len(loading_screen_history) > (30*30)) or lost_connection or (not response.json()['ER']):
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
+            print(f"Check ER: {not response.json()['ER']}")
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
