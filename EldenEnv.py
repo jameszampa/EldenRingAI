@@ -22,6 +22,7 @@ import tensorflow as tf
 import io
 from pydub import AudioSegment
 import base64
+from PIL import ImageGrab
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -48,12 +49,6 @@ DISCRETE_ACTIONS = {'w': 'run_forwards',
                     'r': 'use_item',
                     'space_hold': 'sprint',
                     'f': 'jump'}
-                    #'e': 'event_action'}
-                    # 'up': 'uparrow',
-                    # 'down': 'downarrow',
-                    # 'left': 'leftarrow',
-                    # 'right': 'rightarrow',
-                    # 'esc': 'esc'}
 
 N_DISCRETE_ACTIONS = len(DISCRETE_ACTIONS)
 N_CHANNELS = 3
@@ -92,32 +87,6 @@ def path_to_audio(path):
     audio, _ = tf.audio.decode_wav(audio, 1, 2 * 16000)
     return audio
 
-class ThreadedCamera(object):
-    def __init__(self, src=0):
-        os.system('sudo chmod 777 /dev/video0')
-        self.capture = cv2.VideoCapture(src)
-        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
-        (self.status, self.frame) = self.capture.read()
-        # FPS = 1/X
-        # X = desired FPS
-        self.FPS = 1/30
-        self.FPS_MS = int(self.FPS * 1000)
-        
-        # Start frame retrieval thread
-        self.thread = Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
-        
-    def update(self):
-        while self.capture.isOpened():
-            (self.status, self.frame) = self.capture.read()
-            
-    def close(self):
-        self.capture.release()
-        self.thread.join()
-
 
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -132,19 +101,12 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
 
-        #src = '/dev/video0'
-        #self.cap = ThreadedCamera(src)
-        self.agent_ip = '192.168.4.70'
+        self.agent_ip = 'localhost'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
-
-        # img = self.cap.frame
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
         time.sleep(90)
-
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
@@ -217,18 +179,13 @@ class EldenEnv(gym.Env):
         #         print(str(e))
         print('focus window')
         t1 = time.time()
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
         print('release keys')
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-        frame = np.fromstring(frame, np.uint8)
-        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+        img = ImageGrab.grab()
+        frame = np.asarray(img)
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
@@ -279,9 +236,6 @@ class EldenEnv(gym.Env):
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
                     time.sleep(180)
-
-                    headers = {"Content-Type": "application/json"}
-                    requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
@@ -341,17 +295,11 @@ class EldenEnv(gym.Env):
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
         self.parry_dict['vod_duration'] = time.time() - self.t_start
 
         json_message = {'text': 'Check for frozen screen'}
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
-
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
 
         avg_fps = 0
         for i in range(len(self.last_fps)):
@@ -416,7 +364,10 @@ class EldenEnv(gym.Env):
             if word in lost_connection_text:
                 lost_connection = True
         
-        if (len(loading_screen_history) > (30*30)) or lost_connection:
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/action/check_er", headers=headers)
+
+        if (len(loading_screen_history) > (30*30)) or lost_connection or (not response.json()['ER']):
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
             headers = {"Content-Type": "application/json"}
@@ -425,9 +376,6 @@ class EldenEnv(gym.Env):
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
             time.sleep(180)
-
-            headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
@@ -460,10 +408,6 @@ class EldenEnv(gym.Env):
         self.reward_history = []
         self.parry_dict = {'vod_duration':None,
                            'parries': []}
-
-
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         self.t_start = time.time()
         headers = {"Content-Type": "application/json"}
