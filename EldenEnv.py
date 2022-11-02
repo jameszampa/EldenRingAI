@@ -25,6 +25,7 @@ import base64
 from PIL import ImageGrab
 from Xlib import display, X
 from PIL import Image
+import mss
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -80,6 +81,18 @@ def audio_to_fft(audio):
     # Return the absolute value of the first half of the FFT
     # which represents the positive frequencies
     return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
+
+
+def grab_screen_shot():
+    with mss.mss() as sct:
+        # Get rid of the first, as it represents the "All in One" monitor:
+        for num, monitor in enumerate(sct.monitors[1:], 1):
+            # Get raw pixels from the screen
+            sct_img = sct.grab(monitor)
+
+            # Create the Image
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            return np.asarray(img)
 
 
 def path_to_audio(path):
@@ -186,10 +199,7 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        root = self.dsp.screen().root
-        raw = root.get_image(0, 0, 1920,1080, X.ZPixmap, 0xffffffff)
-        image = Image.fromstring("RGB", (1920, 1080), raw.data, "raw", "BGRX")
-        frame = np.asarray(image)
+        frame = grab_screen_shot()
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
@@ -319,10 +329,7 @@ class EldenEnv(gym.Env):
 
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
-        root = self.dsp.screen().root
-        raw = root.get_image(0, 0, 1920,1080, X.ZPixmap, 0xffffffff)
-        image = Image.fromstring("RGB", (1920, 1080), raw.data, "raw", "BGRX")
-        frame = np.asarray(image)
+        frame = grab_screen_shot()
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
@@ -332,11 +339,7 @@ class EldenEnv(gym.Env):
         min_look = 30
         time.sleep(2)
         while True:
-            root = self.dsp.screen().root
-            raw = root.get_image(0, 0, 1920,1080, X.ZPixmap, 0xffffffff)
-            image = Image.fromstring("RGB", (1920, 1080), raw.data, "raw", "BGRX")
-            frame = np.asarray(image)
-
+            frame = grab_screen_shot()
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
