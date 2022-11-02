@@ -469,6 +469,8 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
 
+        time.sleep(5)
+
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
 
