@@ -226,10 +226,9 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
 
-        frame = base64.decodebytes(response.json()['img'])
+        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
         frame = np.fromstring(frame, np.uint8)
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
