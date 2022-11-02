@@ -257,18 +257,15 @@ class EldenEnv(gym.Env):
                     time.sleep(0.1)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
-                self.reward = -10000000
+                self.reward = -1
                 self.rewardGen.time_since_death = time.time()
             else:
-                if int(action) == 10 and (self.rewardGen.curr_hp / self.rewardGen.max_hp) >= 0.5:
-                    pass
-                else:
-                    if int(action) == 10:
-                        self.time_since_r = time.time()
-                    headers = {"Content-Type": "application/json"}
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
-                    
-                    self.consecutive_deaths = 0
+                if int(action) == 10:
+                    self.time_since_r = time.time()
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{int(action)}", headers=headers)
+                
+                self.consecutive_deaths = 0
         else:
             headers = {"Content-Type": "application/json"}
             # if we load in and die with 5 seconds, restart game because we are frozen on a black screen

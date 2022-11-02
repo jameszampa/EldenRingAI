@@ -36,7 +36,7 @@ while True:
     
 
     hp_image = frame[51:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
-    lower = np.array([0,150,95])
+    lower = np.array([0,150,75])
     upper = np.array([150,255,125])
     #lower = np.array([0,0,150])
     #upper = np.array([255,255,255])
@@ -46,7 +46,7 @@ while True:
     print("PlayerHP:", len(matches) / (hp_image.shape[1] * hp_image.shape[0]))
     
     # 
-    cv2.imshow('data', frame)
+    cv2.imshow('data', mask)
     cv2.waitKey(1)
     print(f"FPS: {1 / (time.time() - t0)}")
     #cv2.waitKey(1)
