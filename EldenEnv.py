@@ -406,7 +406,7 @@ class EldenEnv(gym.Env):
                         all_false = False
                 if all_false:
                     break
-                if len(loading_screen_history) > 30*30:
+                if len(loading_screen_history) > (30*30):
                     break
 
         # This didnt work :(
@@ -419,7 +419,7 @@ class EldenEnv(gym.Env):
             if word in lost_connection_text:
                 lost_connection = True
         
-        if len(loading_screen_history) > 30*30 or lost_connection:
+        if (len(loading_screen_history) > (30*30)) or lost_connection:
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
             headers = {"Content-Type": "application/json"}
