@@ -383,7 +383,7 @@ class EldenEnv(gym.Env):
         loading_screen = "Next" in next_text
         loading_screen_history = []
         num_in_row = 0
-        min_look = 30
+        min_look = 10
         time.sleep(2)
         while True:
             headers = {"Content-Type": "application/json"}
