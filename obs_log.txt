@@ -1,1 +1,1 @@
-Num resets: 8
+Num resets: 1

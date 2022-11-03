@@ -65,8 +65,10 @@ def get_er_process_ids():
 
 
 def stop_er():
+    cmd = ['kill', '-9']
     for id in get_er_process_ids():
-        subprocess.Popen(['kill', '-9', id], stdout=subprocess.PIPE)
+        cmd.append(id)
+    subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
 
 @app.route('/action/load_save', methods=["POST"])
@@ -226,8 +228,6 @@ def return_to_grace():
             elden_agent.keyboard.press('e')
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
-
-            time.sleep(11)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -379,7 +379,8 @@ def stop_elden_ring():
         try:
             print('STOP ELDEN RING')
             update_status(f'Stop Elden Ring')
-            stop_er()
+            while(len(get_er_process_ids()) > 0):
+                stop_er()
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

@@ -203,7 +203,7 @@ class EldenEnv(gym.Env):
         if not self.first_step:
             if t0 - self.prev_step_end_ts > 5:
                 headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+                #requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 time.sleep(10)
@@ -290,10 +290,9 @@ class EldenEnv(gym.Env):
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
-                time.sleep(10)
+                time.sleep(1)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
-                time.sleep(5)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
                 self.done = True
                 self.reward = -1
                 self.rewardGen.time_since_death = time.time()
@@ -325,11 +324,13 @@ class EldenEnv(gym.Env):
                     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             else:
                 headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+                #requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
-                time.sleep(5)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+                time.sleep(4)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
             self.done = True
         print('final steps')
@@ -373,7 +374,10 @@ class EldenEnv(gym.Env):
     def reset(self):
         self.done = False
         #self.cap = ThreadedCamera('/dev/video0')
-        time.sleep(5)
+        headers = {"Content-Type": "application/json"}
+        #time.sleep(2)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
@@ -398,31 +402,31 @@ class EldenEnv(gym.Env):
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
         frame = self.grab_screen_shot()
-        next_text_image = frame[1015:1040, 155:205]
-        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
-        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
-        loading_screen = "Next" in next_text
+        # next_text_image = frame[1015:1040, 155:205]
+        # next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+        # next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+        # loading_screen = "Next" in next_text
         loading_screen_history = []
-        num_in_row = 0
-        min_look = 30
+        max_loading_screen_len = 30 * 15
         time.sleep(2)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+        t_check_frozen_start = time.time()
+        t_since_seen_next = None
         while True:
             frame = self.grab_screen_shot()
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             loading_screen = "Next" in next_text
-            #time.sleep(1/30)
-            loading_screen_history.append(loading_screen)
-            if len(loading_screen_history) > min_look:
-                all_false = True
-                for i in range(5):
-                    if loading_screen_history[-(i + 1)]:
-                        all_false = False
-                if all_false:
+            if loading_screen:
+                t_since_seen_next = time.time()
+            if not t_since_seen_next is None:
+                if ((time.time() - t_check_frozen_start) > 7.5) and (time.time() - t_since_seen_next) > 5:
                     break
-                if len(loading_screen_history) > (30*30):
+                elif ((time.time() - t_check_frozen_start) > 30):
                     break
+        self.logger.add_scalar('check_frozen_time', time.time() - t_check_frozen_start, self.num_runs)
 
         # This didnt work :(
         lost_connection_image = frame[475:550, 675:1250]
@@ -437,7 +441,7 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         response = requests.post(f"http://{self.agent_ip}:6000/action/check_er", headers=headers)
 
-        if (len(loading_screen_history) > (30*30)) or lost_connection or (not response.json()['ER']):
+        if ((time.time() - t_check_frozen_start) > 30) or lost_connection or (not response.json()['ER']):
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
             print(f"Check ER: {not response.json()['ER']}")
@@ -455,8 +459,8 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
 
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
+        #headers = {"Content-Type": "application/json"}
+        #requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.done = False
@@ -482,11 +486,12 @@ class EldenEnv(gym.Env):
 
         self.t_start = time.time()
         headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
+        #requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
 
-        time.sleep(5)
-
+        #time.sleep(2.5)
         headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
 
         json_message = {'text': 'Step'}
