@@ -204,11 +204,12 @@ class EldenEnv(gym.Env):
             if t0 - self.prev_step_end_ts > 5:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(10):
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                time.sleep(10)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                time.sleep(5)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 self.done = True
             self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
 
@@ -287,11 +288,12 @@ class EldenEnv(gym.Env):
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
-                for i in range(10):
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                time.sleep(10)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                time.sleep(5)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 self.done = True
                 self.reward = -1
                 self.rewardGen.time_since_death = time.time()
@@ -324,10 +326,10 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(10):
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                time.sleep(5)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
 
             self.done = True
         print('final steps')
@@ -358,7 +360,7 @@ class EldenEnv(gym.Env):
         print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         print("t4-t_end took {:.5f} seconds".format(t_end - t4))
         self.last_fps.append(1 / (t_end - t0))
-        desired_fps = (1 / 15) 
+        desired_fps = (1 / 30) 
         time_to_sleep = desired_fps - (t_end - t0)
         #print(1 / (time.time() - t0))
         if time_to_sleep > 0:

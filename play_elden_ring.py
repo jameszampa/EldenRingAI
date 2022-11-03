@@ -403,7 +403,8 @@ def start_elden_ring():
 
 
 @app.route('/action/release_keys', methods=["POST"])
-def release_keys():
+@app.route('/action/release_keys/<force>', methods=["POST"])
+def release_keys(force=False):
     if request.method == 'POST':
         try:
             print('RELEASE KEYS')
@@ -414,7 +415,7 @@ def release_keys():
                     elden_agent.keyboard.release(key)
                     elden_agent.keys_pressed.remove(key)
                 else:
-                    if time.time() - key[2] > key[1]:
+                    if ((time.time() - key[2]) > key[1]) or force:
                         elden_agent.keyboard.release(key[0])
                         elden_agent.keys_pressed.remove(key)
             return Response(status=200)
