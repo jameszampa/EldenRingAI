@@ -2,30 +2,19 @@ import os
 import cv2
 import gym
 import time
+import json
+import wave
+import pyaudio
 import requests
-import subprocess
+import threading
 import numpy as np
 import pytesseract
 from gym import spaces
-from tensorboardX import SummaryWriter
-from EldenReward import EldenReward
-import json
-from threading import Thread
-import cv2
-import pyaudio
-import wave
-import threading
-import time
-import subprocess
-import os
 import tensorflow as tf
-import io
-from pydub import AudioSegment
-import base64
-from PIL import ImageGrab
-from Xlib import display, X
-from PIL import Image
-import mss
+from mss.linux import MSS as mss
+from EldenReward import EldenReward
+from tensorboardX import SummaryWriter
+
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -80,19 +69,7 @@ def audio_to_fft(audio):
 
     # Return the absolute value of the first half of the FFT
     # which represents the positive frequencies
-    return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
-
-
-def grab_screen_shot():
-    with mss.mss() as sct:
-        # Get rid of the first, as it represents the "All in One" monitor:
-        for num, monitor in enumerate(sct.monitors[1:], 1):
-            # Get raw pixels from the screen
-            sct_img = sct.grab(monitor)
-
-            # Create the Image
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-            return np.asarray(img)
+    return tf.math.abs(fft[:, : (32000 // 2), :])
 
 
 def path_to_audio(path):
@@ -100,6 +77,60 @@ def path_to_audio(path):
     audio = tf.io.read_file(path)
     audio, _ = tf.audio.decode_wav(audio, 1, 2 * 16000)
     return audio
+
+
+class AudioRecorder():
+    # Audio class based on pyAudio and Wave
+    def __init__(self):
+        self.open = True
+        self.rate = 16000
+        self.frames_per_buffer = 16000 * 2
+        self.channels = 1
+        self.format = pyaudio.paInt16
+        self.audio_filename = "temp_audio.wav"
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=self.format,
+                                      channels=self.channels,
+                                      rate=self.rate,
+                                      input=True,
+                                      frames_per_buffer = self.frames_per_buffer,
+                                      input_device_index=19)
+        self.audio_frames = []
+        self.active = False
+
+
+    # Audio starts being recorded
+    def record(self):
+        self.active = True
+        data = self.stream.read(self.frames_per_buffer) 
+        self.audio_frames.append(data)
+        self.active = False
+
+
+    def get_audio(self):
+        if len(self.audio_frames) > 0:
+            return self.audio_frames.pop()
+        else:
+            return None
+
+
+    def close(self):
+        self.active = False
+        self.stream.close()
+        self.audio.terminate()
+
+        waveFile = wave.open(self.audio_filename, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
+
+    # Launches the audio recording function using a thread
+    def start(self):
+        if not self.active:
+            audio_thread = threading.Thread(target=self.record)
+            audio_thread.start()
 
 
 class EldenEnv(gym.Env):
@@ -144,7 +175,18 @@ class EldenEnv(gym.Env):
         self.parry_detector = tf.saved_model.load('parry_detector')
         self.prev_step_end_ts = time.time()
         self.last_fps = []
-        self.dsp = display.Display()
+        self.sct = mss()
+        self.audio_cap = AudioRecorder()
+
+
+    def grab_screen_shot(self):
+        for num, monitor in enumerate(self.sct.monitors[1:], 1):
+            # Get raw pixels from the screen
+            sct_img = self.sct.grab(monitor)
+
+            # Create the Image
+            #decoded = cv2.imdecode(np.frombuffer(sct_img, np.uint8), -1)
+            return cv2.cvtColor(np.asarray(sct_img), cv2.COLOR_BGRA2RGB)
 
 
     def step(self, action):
@@ -164,6 +206,7 @@ class EldenEnv(gym.Env):
 
         parry_reward = 0
         if int(action) == 9:
+            self.audio_cap.start()
             self.parry_dict['parries'].append(time.time() - self.t_start)
         # if int(action) == 9:
         #     if self.t_since_parry is None or (time.time() - self.t_since_parry) > 2.1:
@@ -199,10 +242,24 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        frame = grab_screen_shot()
+        frame = self.grab_screen_shot()
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
+
+        audio_buffer = self.audio_cap.get_audio()
+        if not audio_buffer is None:
+            audio_input = np.expand_dims(np.frombuffer(audio_buffer, dtype=np.int16), axis=-1)
+            audio_input = np.expand_dims(audio_input, axis=0)
+            audio_input = audio_input.astype(np.float32)
+            #print(audio_input.shape)
+            fft = audio_to_fft(audio_input)
+            pred = self.parry_detector(fft)
+            pred = np.squeeze(pred)
+            pred_idx = np.argmax(pred, axis=0)
+            print(pred_idx)
+            if CLASS_NAMES[int(pred_idx)] == 'successful_parries':
+                parry_reward = 1
 
         t3 = time.time()
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
@@ -299,6 +356,7 @@ class EldenEnv(gym.Env):
         if time_to_sleep > 0:
             time.sleep(time_to_sleep)
         self.logger.add_scalar('step_time', (time.time() - t0), self.iteration)
+        self.logger.add_scalar('FPS', 1 / (time.time() - t0), self.iteration)
         self.prev_step_end_ts = time.time()
         return observation, self.reward, self.done, info
     
@@ -329,7 +387,7 @@ class EldenEnv(gym.Env):
 
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
-        frame = grab_screen_shot()
+        frame = self.grab_screen_shot()
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
@@ -339,7 +397,7 @@ class EldenEnv(gym.Env):
         min_look = 30
         time.sleep(2)
         while True:
-            frame = grab_screen_shot()
+            frame = self.grab_screen_shot()
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')

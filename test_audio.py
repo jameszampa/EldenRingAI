@@ -8,7 +8,7 @@ import os
 
 class AudioRecorder():
     # Audio class based on pyAudio and Wave
-    def __init__(self, device):
+    def __init__(self):
         self.open = True
         self.rate = 16000
         self.frames_per_buffer = 16000 * 2
@@ -21,7 +21,7 @@ class AudioRecorder():
                                       rate=self.rate,
                                       input=True,
                                       frames_per_buffer = self.frames_per_buffer,
-                                      input_device_index=0)
+                                      input_device_index=19)
         self.audio_frames = []
         self.active = False
 
@@ -57,7 +57,7 @@ class AudioRecorder():
 
 
 def main():
-    audio_cap = AudioRecorder('/dev/video0')
+    audio_cap = AudioRecorder()
     audio_cap.start()
     while len(audio_cap.get_audio()) == 0: pass
     print(audio_cap.get_audio()[0])
