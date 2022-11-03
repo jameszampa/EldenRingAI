@@ -87,7 +87,7 @@ class AudioRecorder():
         self.frames_per_buffer = 16000 * 2
         self.channels = 1
         self.format = pyaudio.paInt16
-        self.audio_filename = "temp_audio.wav"
+        self.audio_filename = "parry.wav"
         self.audio = pyaudio.PyAudio()
         self.stream = self.audio.open(format=self.format,
                                       channels=self.channels,
@@ -100,11 +100,19 @@ class AudioRecorder():
 
 
     # Audio starts being recorded
-    def record(self):
+    def record(self, iter):
         self.active = True
         data = self.stream.read(self.frames_per_buffer) 
         self.audio_frames.append(data)
+        file_name = os.path.join('parries', self.audio_filename[:-4] + "_" + str(iter).zfill(7) + '.wav')
+        waveFile = wave.open(file_name, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
         self.active = False
+
 
 
     def get_audio(self):
@@ -127,9 +135,9 @@ class AudioRecorder():
         waveFile.close()
 
     # Launches the audio recording function using a thread
-    def start(self):
+    def start(self, iter):
         if not self.active:
-            audio_thread = threading.Thread(target=self.record)
+            audio_thread = threading.Thread(target=self.record, args=(iter,))
             audio_thread.start()
 
 
@@ -206,7 +214,7 @@ class EldenEnv(gym.Env):
 
         parry_reward = 0
         if int(action) == 9:
-            self.audio_cap.start()
+            self.audio_cap.start(self.iteration)
             self.parry_dict['parries'].append(time.time() - self.t_start)
         # if int(action) == 9:
         #     if self.t_since_parry is None or (time.time() - self.t_since_parry) > 2.1:
@@ -258,7 +266,7 @@ class EldenEnv(gym.Env):
             pred = np.squeeze(pred)
             pred_idx = np.argmax(pred, axis=0)
             print(pred_idx)
-            if CLASS_NAMES[int(pred_idx)] == 'successful_parries':
+            if CLASS_NAMES[int(pred_idx)] == 'successful_parries' and pred[int(pred_idx)] > 0.99:
                 parry_reward = 1
 
         t3 = time.time()
@@ -272,7 +280,7 @@ class EldenEnv(gym.Env):
         if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
-        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
+        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward # + parry_reward
 
         print('custom action')
         if not self.death and not self.done:

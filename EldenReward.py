@@ -221,7 +221,7 @@ class EldenReward:
         boss_hp = 1
         if self.seen_boss and not self.death:
             boss_hp_image = frame[869:873, 475:1460]
-            lower = np.array([100,0,0])
+            lower = np.array([0,0,75])
             upper = np.array([150,255,255])
             hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
             mask = cv2.inRange(hsv, lower, upper)

@@ -5,22 +5,26 @@ import numpy as np
 import pytesseract
 import base64
 import requests
+from mss.linux import MSS as mss
+
 
 rewardGen = EldenReward(1, "templogs")
+sct = mss()
+
+
+def grab_screen_shot(sct):
+    for num, monitor in enumerate(sct.monitors[1:], 1):
+        # Get raw pixels from the screen
+        sct_img = sct.grab(monitor)
+
+        # Create the Image
+        #decoded = cv2.imdecode(np.frombuffer(sct_img, np.uint8), -1)
+        return cv2.cvtColor(np.asarray(sct_img), cv2.COLOR_BGRA2RGB)
+
 
 while True:
     t0 = time.time()
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(f"http://192.168.4.70:6000/action/focus_window", headers=headers)
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(f"http://192.168.4.70:6000/action/screen_shot", headers=headers)
-
-    #print(response.json())
-
-    frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-    frame = np.fromstring(frame, np.uint8)
-    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-    #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = grab_screen_shot(sct)
     print(frame.shape)
 
     runes, stat, hp, death, dmg_reward, find_reward, time_since_seen_boss = rewardGen.update(frame)
@@ -32,19 +36,17 @@ while True:
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
-    #print(rewardGen.boss_hp)
     
-
-    hp_image = frame[51:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
-    lower = np.array([0,150,75])
-    upper = np.array([150,255,125])
-    #lower = np.array([0,0,150])
-    #upper = np.array([255,255,255])
-    hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
+    
+    boss_hp = 1
+    boss_hp_image = frame[869:873, 475:1460]
+    lower = np.array([0,0,75])
+    upper = np.array([150,255,255])
+    hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
     mask = cv2.inRange(hsv, lower, upper)
     matches = np.argwhere(mask==255)
-    print("PlayerHP:", len(matches) / (hp_image.shape[1] * hp_image.shape[0]))
-    
+    boss_hp = len(matches) / (boss_hp_image.shape[1] * boss_hp_image.shape[0])
+    print(boss_hp)
     # 
     cv2.imshow('data', mask)
     cv2.waitKey(1)
