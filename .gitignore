@@ -18,3 +18,5 @@ obs_timer.txt
 status.txt
 tmp.wav
 twitchbot_log.txt
+archived_logs/*
+archived_models/*
