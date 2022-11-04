@@ -9,6 +9,7 @@ import requests
 import threading
 import numpy as np
 import pytesseract
+import subprocess
 from gym import spaces
 import tensorflow as tf
 from mss.linux import MSS as mss
@@ -55,6 +56,17 @@ with open('vigor_chart.csv', 'r') as v_chart:
         hp_amount = int(line.split(',')[1])
         HP_CHART[stat_point] = hp_amount
 #print(HP_CHART)
+
+
+def timer_callback(t_start):
+    while True:
+        with open('obs_timer.txt', 'w') as f:
+            duration = time.gmtime(time.time() - t_start)
+            days = int(np.floor((time.time() - t_start) / (24 * 60 * 60)))
+            f.write(str(days).zfill(2) + ":")
+            f.write(str(time.strftime('%H:%M:%S', duration)))
+        time.sleep(1)
+
 
 
 def audio_to_fft(audio):
@@ -185,6 +197,10 @@ class EldenEnv(gym.Env):
         self.last_fps = []
         self.sct = mss()
         self.audio_cap = AudioRecorder()
+        self.boss_hp_end_history = []
+        threading.Thread(target=timer_callback, args=(time.time(),)).start()
+
+        #subprocess.Popen(['python', 'timer.py', '>', 'obs_timer.txt'])
 
 
     def grab_screen_shot(self):
@@ -292,7 +308,7 @@ class EldenEnv(gym.Env):
                 requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 time.sleep(1)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 self.done = True
                 self.reward = -1
                 self.rewardGen.time_since_death = time.time()
@@ -325,12 +341,11 @@ class EldenEnv(gym.Env):
             else:
                 headers = {"Content-Type": "application/json"}
                 #requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
-                time.sleep(4)
-                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+                for i in range(4):
+                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                    time.sleep(1)
 
             self.done = True
         print('final steps')
@@ -369,15 +384,18 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('step_time', (time.time() - t0), self.iteration)
         self.logger.add_scalar('FPS', 1 / (time.time() - t0), self.iteration)
         self.prev_step_end_ts = time.time()
+        if (self.iteration % 32768) == 0:
+            json_message = {'text': 'Collecting rollout buffer'}
+            headers = {"Content-Type": "application/json"}
+            requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
         return observation, self.reward, self.done, info
     
     def reset(self):
         self.done = False
         #self.cap = ThreadedCamera('/dev/video0')
         headers = {"Content-Type": "application/json"}
-        #time.sleep(2)
-        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
 
@@ -390,14 +408,20 @@ class EldenEnv(gym.Env):
         avg_fps = 0
         for i in range(len(self.last_fps)):
             avg_fps += self.last_fps[i]
-        self.last_fps = []
         if len(self.last_fps) > 0:
             avg_fps = avg_fps / len(self.last_fps)
+        self.last_fps = []
         #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+        self.boss_hp_end_history.append(self.rewardGen.boss_hp)
+        avg_boss_hp = 0
+        if len(self.boss_hp_end_history) > 0:
+            for i in range(len(self.boss_hp_end_history)):
+                avg_boss_hp += self.boss_hp_end_history[i]
+            avg_boss_hp /= len(self.boss_hp_end_history)
         json_message = {"death": self.death,
                         "reward": avg_fps,
                         "num_run": self.num_runs,
-                        "lowest_boss_hp": self.rewardGen.min_boss_hp}
+                        "lowest_boss_hp": avg_boss_hp}
 
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
@@ -410,7 +434,7 @@ class EldenEnv(gym.Env):
         max_loading_screen_len = 30 * 15
         time.sleep(2)
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
         t_check_frozen_start = time.time()
         t_since_seen_next = None
         while True:
@@ -421,11 +445,12 @@ class EldenEnv(gym.Env):
             loading_screen = "Next" in next_text
             if loading_screen:
                 t_since_seen_next = time.time()
-            if not t_since_seen_next is None:
-                if ((time.time() - t_check_frozen_start) > 7.5) and (time.time() - t_since_seen_next) > 5:
-                    break
-                elif ((time.time() - t_check_frozen_start) > 30):
-                    break
+            if not t_since_seen_next is None and ((time.time() - t_check_frozen_start) > 7.5) and (time.time() - t_since_seen_next) > 7.5:
+                break
+            elif not t_since_seen_next is None and  ((time.time() - t_check_frozen_start) > 30):
+                break
+            elif t_since_seen_next is None and ((time.time() - t_check_frozen_start) > 20):
+                break
         self.logger.add_scalar('check_frozen_time', time.time() - t_check_frozen_start, self.num_runs)
 
         # This didnt work :(
@@ -488,10 +513,10 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         #requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
 
-        #time.sleep(2.5)
+        time.sleep(0.5)
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
 
         json_message = {'text': 'Step'}

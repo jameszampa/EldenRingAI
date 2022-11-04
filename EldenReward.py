@@ -52,7 +52,7 @@ class EldenReward:
         self.boss_max_hp = 3200
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
         self.iteration = 0
-        self.boss_hp = None
+        self.boss_hp = 1
         self.time_since_last_hp_change = time.time()
         self.time_since_last_boss_hp_change = time.time()
         self.boss_hp_history = []

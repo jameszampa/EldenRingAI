@@ -102,7 +102,7 @@ def load_save():
 def death_reset():
     if request.method == 'POST':
         try:
-            elden_agent.keys_pressed = []
+            #elden_agent.keys_pressed = []
             print('DEATH RESET')
             update_status('Death reset')
             curr_reward = None
@@ -243,7 +243,7 @@ def init_fight():
             update_status(f'Initializing fight')
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(2.35)
+            time.sleep(2.50)
             elden_agent.keyboard.press('f')
             time.sleep(0.05)
             elden_agent.keyboard.release('f')
@@ -266,12 +266,12 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             #elden_agent.keyboard.press('w')
-            time.sleep(2)
+            time.sleep(1)
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release(kb.Key.space)
-            
+            time.sleep(0.1)
             elden_agent.keyboard.press('q')
-            time.sleep(0.05)
+            time.sleep(0.1)
             elden_agent.keyboard.release('q')
 
             return Response(status=200)

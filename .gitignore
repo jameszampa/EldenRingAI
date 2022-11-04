@@ -14,3 +14,8 @@ lowest_boss_hp.txt
 tmp.wav
 obs_log.txt
 templogs/*
+twitch_creds.json
+obs_timer.txt
+status.txt
+tmp.wav
+twitchbot_log.txt
