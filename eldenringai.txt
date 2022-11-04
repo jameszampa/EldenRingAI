@@ -1,4 +1,3 @@
-
 The EldenRingAI project started on September 27th, 2022.
 The goal for the project is to create a reinforcement learning algorithm capable of killing the Tree Sentinel with the ultimate hopes to beat other bosses as well.
 The EldenRingAI code has several components, a Flask server to interact with Elden Ring, a OpenAI gym environment, and a reward generator.
