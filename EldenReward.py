@@ -47,12 +47,12 @@ class EldenReward:
         self.curr_boss_hp = 3200
         #self.prev_boss_hp = None
 
-        self.agent_ip = '192.168.4.70'
+        self.agent_ip = 'localhost'
         self._request_stats()
         self.boss_max_hp = 3200
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
         self.iteration = 0
-        self.boss_hp = None
+        self.boss_hp = 1
         self.time_since_last_hp_change = time.time()
         self.time_since_last_boss_hp_change = time.time()
         self.boss_hp_history = []
@@ -221,7 +221,7 @@ class EldenReward:
         boss_hp = 1
         if self.seen_boss and not self.death:
             boss_hp_image = frame[869:873, 475:1460]
-            lower = np.array([100,0,0])
+            lower = np.array([0,0,75])
             upper = np.array([150,255,255])
             hsv = cv2.cvtColor(boss_hp_image, cv2.COLOR_RGB2HSV)
             mask = cv2.inRange(hsv, lower, upper)

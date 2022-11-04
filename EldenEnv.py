@@ -2,26 +2,19 @@ import os
 import cv2
 import gym
 import time
+import json
+import wave
+import pyaudio
 import requests
-import subprocess
+import threading
 import numpy as np
 import pytesseract
-from gym import spaces
-from tensorboardX import SummaryWriter
-from EldenReward import EldenReward
-import json
-from threading import Thread
-import cv2
-import pyaudio
-import wave
-import threading
-import time
 import subprocess
-import os
+from gym import spaces
 import tensorflow as tf
-import io
-from pydub import AudioSegment
-import base64
+from mss.linux import MSS as mss
+from EldenReward import EldenReward
+from tensorboardX import SummaryWriter
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -48,12 +41,6 @@ DISCRETE_ACTIONS = {'w': 'run_forwards',
                     'r': 'use_item',
                     'space_hold': 'sprint',
                     'f': 'jump'}
-                    #'e': 'event_action'}
-                    # 'up': 'uparrow',
-                    # 'down': 'downarrow',
-                    # 'left': 'leftarrow',
-                    # 'right': 'rightarrow',
-                    # 'esc': 'esc'}
 
 N_DISCRETE_ACTIONS = len(DISCRETE_ACTIONS)
 N_CHANNELS = 3
@@ -71,6 +58,17 @@ with open('vigor_chart.csv', 'r') as v_chart:
 #print(HP_CHART)
 
 
+def timer_callback(t_start):
+    while True:
+        with open('obs_timer.txt', 'w') as f:
+            duration = time.gmtime(time.time() - t_start)
+            days = int(np.floor((time.time() - t_start) / (24 * 60 * 60)))
+            f.write(str(days).zfill(2) + ":")
+            f.write(str(time.strftime('%H:%M:%S', duration)))
+        time.sleep(1)
+
+
+
 def audio_to_fft(audio):
     # Since tf.signal.fft applies FFT on the innermost dimension,
     # we need to squeeze the dimensions and then expand them again
@@ -83,7 +81,7 @@ def audio_to_fft(audio):
 
     # Return the absolute value of the first half of the FFT
     # which represents the positive frequencies
-    return tf.math.abs(fft[:, : (audio.shape[1] // 2), :])
+    return tf.math.abs(fft[:, : (32000 // 2), :])
 
 
 def path_to_audio(path):
@@ -92,31 +90,67 @@ def path_to_audio(path):
     audio, _ = tf.audio.decode_wav(audio, 1, 2 * 16000)
     return audio
 
-class ThreadedCamera(object):
-    def __init__(self, src=0):
-        os.system('sudo chmod 777 /dev/video0')
-        self.capture = cv2.VideoCapture(src)
-        self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_WIDTH)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT)
-        (self.status, self.frame) = self.capture.read()
-        # FPS = 1/X
-        # X = desired FPS
-        self.FPS = 1/30
-        self.FPS_MS = int(self.FPS * 1000)
-        
-        # Start frame retrieval thread
-        self.thread = Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
-        
-    def update(self):
-        while self.capture.isOpened():
-            (self.status, self.frame) = self.capture.read()
-            
+
+class AudioRecorder():
+    # Audio class based on pyAudio and Wave
+    def __init__(self):
+        self.open = True
+        self.rate = 16000
+        self.frames_per_buffer = 16000 * 2
+        self.channels = 1
+        self.format = pyaudio.paInt16
+        self.audio_filename = "parry.wav"
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=self.format,
+                                      channels=self.channels,
+                                      rate=self.rate,
+                                      input=True,
+                                      frames_per_buffer = self.frames_per_buffer,
+                                      input_device_index=19)
+        self.audio_frames = []
+        self.active = False
+
+
+    # Audio starts being recorded
+    def record(self, iter):
+        self.active = True
+        data = self.stream.read(self.frames_per_buffer) 
+        self.audio_frames.append(data)
+        file_name = os.path.join('parries', self.audio_filename[:-4] + "_" + str(iter).zfill(7) + '.wav')
+        waveFile = wave.open(file_name, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
+        self.active = False
+
+
+
+    def get_audio(self):
+        if len(self.audio_frames) > 0:
+            return self.audio_frames.pop()
+        else:
+            return None
+
+
     def close(self):
-        self.capture.release()
-        self.thread.join()
+        self.active = False
+        self.stream.close()
+        self.audio.terminate()
+
+        waveFile = wave.open(self.audio_filename, 'wb')
+        waveFile.setnchannels(self.channels)
+        waveFile.setsampwidth(self.audio.get_sample_size(self.format))
+        waveFile.setframerate(self.rate)
+        waveFile.writeframes(b''.join(self.audio_frames))
+        waveFile.close()
+
+    # Launches the audio recording function using a thread
+    def start(self, iter):
+        if not self.active:
+            audio_thread = threading.Thread(target=self.record, args=(iter,))
+            audio_thread.start()
 
 
 class EldenEnv(gym.Env):
@@ -132,19 +166,12 @@ class EldenEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(MODEL_HEIGHT, MODEL_WIDTH, N_CHANNELS), dtype=np.uint8)
 
-        #src = '/dev/video0'
-        #self.cap = ThreadedCamera(src)
-        self.agent_ip = '192.168.4.70'
+        self.agent_ip = 'localhost'
         self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
-
-        # img = self.cap.frame
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
         time.sleep(90)
-
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
@@ -168,6 +195,22 @@ class EldenEnv(gym.Env):
         self.parry_detector = tf.saved_model.load('parry_detector')
         self.prev_step_end_ts = time.time()
         self.last_fps = []
+        self.sct = mss()
+        self.audio_cap = AudioRecorder()
+        self.boss_hp_end_history = []
+        threading.Thread(target=timer_callback, args=(time.time(),)).start()
+
+        #subprocess.Popen(['python', 'timer.py', '>', 'obs_timer.txt'])
+
+
+    def grab_screen_shot(self):
+        for num, monitor in enumerate(self.sct.monitors[1:], 1):
+            # Get raw pixels from the screen
+            sct_img = self.sct.grab(monitor)
+
+            # Create the Image
+            #decoded = cv2.imdecode(np.frombuffer(sct_img, np.uint8), -1)
+            return cv2.cvtColor(np.asarray(sct_img), cv2.COLOR_BGRA2RGB)
 
 
     def step(self, action):
@@ -176,17 +219,19 @@ class EldenEnv(gym.Env):
         if not self.first_step:
             if t0 - self.prev_step_end_ts > 5:
                 headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(10):
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                #requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                time.sleep(10)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                time.sleep(5)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 self.done = True
             self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
 
         parry_reward = 0
         if int(action) == 9:
+            self.audio_cap.start(self.iteration)
             self.parry_dict['parries'].append(time.time() - self.t_start)
         # if int(action) == 9:
         #     if self.t_since_parry is None or (time.time() - self.t_since_parry) > 2.1:
@@ -217,21 +262,29 @@ class EldenEnv(gym.Env):
         #         print(str(e))
         print('focus window')
         t1 = time.time()
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
+
         print('release keys')
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
 
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-        frame = np.fromstring(frame, np.uint8)
-        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+        frame = self.grab_screen_shot()
         print('reward update')
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen = self.rewardGen.update(frame)
+
+        audio_buffer = self.audio_cap.get_audio()
+        if not audio_buffer is None:
+            audio_input = np.expand_dims(np.frombuffer(audio_buffer, dtype=np.int16), axis=-1)
+            audio_input = np.expand_dims(audio_input, axis=0)
+            audio_input = audio_input.astype(np.float32)
+            #print(audio_input.shape)
+            fft = audio_to_fft(audio_input)
+            pred = self.parry_detector(fft)
+            pred = np.squeeze(pred)
+            pred_idx = np.argmax(pred, axis=0)
+            print(pred_idx)
+            if CLASS_NAMES[int(pred_idx)] == 'successful_parries' and pred[int(pred_idx)] > 0.99:
+                parry_reward = 1
 
         t3 = time.time()
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
@@ -244,18 +297,18 @@ class EldenEnv(gym.Env):
         if hp > 0 and (time.time() - self.time_since_r) > 1.0:
             hp = 0
 
-        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward + parry_reward
+        self.reward = time_alive + percent_through + hp + dmg_reward + find_reward # + parry_reward
 
         print('custom action')
         if not self.death and not self.done:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
             if (time.time() - self.t_start) > TOTAL_ACTIONABLE_TIME and self.rewardGen.time_since_seen_boss > 2.5:
                 headers = {"Content-Type": "application/json"}
-                for i in range(10):
-                    requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                time.sleep(1)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 self.done = True
                 self.reward = -1
                 self.rewardGen.time_since_death = time.time()
@@ -281,20 +334,18 @@ class EldenEnv(gym.Env):
                     time.sleep(180)
 
                     headers = {"Content-Type": "application/json"}
-                    requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
-                    headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
 
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             else:
                 headers = {"Content-Type": "application/json"}
-                requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
-                for i in range(10):
+                #requests.post(f"http://{self.agent_ip}:6000/recording/stop", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+                for i in range(4):
                     requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
-                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
-                    time.sleep(0.1)
+                    requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                    time.sleep(1)
 
             self.done = True
         print('final steps')
@@ -325,24 +376,28 @@ class EldenEnv(gym.Env):
         print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         print("t4-t_end took {:.5f} seconds".format(t_end - t4))
         self.last_fps.append(1 / (t_end - t0))
-        desired_fps = (1 / 15) 
+        desired_fps = (1 / 30) 
         time_to_sleep = desired_fps - (t_end - t0)
         #print(1 / (time.time() - t0))
         if time_to_sleep > 0:
             time.sleep(time_to_sleep)
         self.logger.add_scalar('step_time', (time.time() - t0), self.iteration)
+        self.logger.add_scalar('FPS', 1 / (time.time() - t0), self.iteration)
         self.prev_step_end_ts = time.time()
+        if (self.iteration % 32768) == 0:
+            json_message = {'text': 'Collecting rollout buffer'}
+            headers = {"Content-Type": "application/json"}
+            requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
         return observation, self.reward, self.done, info
     
     def reset(self):
         self.done = False
         #self.cap = ThreadedCamera('/dev/video0')
-        time.sleep(5)
+        headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
         self.num_runs += 1
         self.logger.add_scalar('iteration_finder', self.iteration, self.num_runs)
-
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
 
         self.parry_dict['vod_duration'] = time.time() - self.t_start
 
@@ -350,61 +405,53 @@ class EldenEnv(gym.Env):
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
 
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/audio/reset", headers=headers)
-
         avg_fps = 0
         for i in range(len(self.last_fps)):
             avg_fps += self.last_fps[i]
-        self.last_fps = []
         if len(self.last_fps) > 0:
             avg_fps = avg_fps / len(self.last_fps)
+        self.last_fps = []
         #requests.post(f"http://{self.agent_ip}:6000/action/death_reset", headers=headers)
+        self.boss_hp_end_history.append(self.rewardGen.boss_hp)
+        avg_boss_hp = 0
+        if len(self.boss_hp_end_history) > 0:
+            for i in range(len(self.boss_hp_end_history)):
+                avg_boss_hp += self.boss_hp_end_history[i]
+            avg_boss_hp /= len(self.boss_hp_end_history)
         json_message = {"death": self.death,
                         "reward": avg_fps,
                         "num_run": self.num_runs,
-                        "lowest_boss_hp": self.rewardGen.min_boss_hp}
+                        "lowest_boss_hp": avg_boss_hp}
 
         requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
 
-        # check frozen load screen
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-        frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-        frame = np.fromstring(frame, np.uint8)
-        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-        next_text_image = frame[1015:1040, 155:205]
-        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
-        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
-        loading_screen = "Next" in next_text
+        frame = self.grab_screen_shot()
+        # next_text_image = frame[1015:1040, 155:205]
+        # next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+        # next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+        # loading_screen = "Next" in next_text
         loading_screen_history = []
-        num_in_row = 0
-        min_look = 15
+        max_loading_screen_len = 30 * 15
         time.sleep(2)
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+        t_check_frozen_start = time.time()
+        t_since_seen_next = None
         while True:
-            headers = {"Content-Type": "application/json"}
-            response = requests.post(f"http://{self.agent_ip}:6000/action/screen_shot", headers=headers)
-
-            frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-            frame = np.fromstring(frame, np.uint8)
-            frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-
+            frame = self.grab_screen_shot()
             next_text_image = frame[1015:1040, 155:205]
             next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
             next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
             loading_screen = "Next" in next_text
-            #time.sleep(1/30)
-            loading_screen_history.append(loading_screen)
-            if len(loading_screen_history) > min_look:
-                all_false = True
-                for i in range(5):
-                    if loading_screen_history[-(i + 1)]:
-                        all_false = False
-                if all_false:
-                    break
-                if len(loading_screen_history) > (30*30):
-                    break
+            if loading_screen:
+                t_since_seen_next = time.time()
+            if not t_since_seen_next is None and ((time.time() - t_check_frozen_start) > 7.5) and (time.time() - t_since_seen_next) > 7.5:
+                break
+            elif not t_since_seen_next is None and  ((time.time() - t_check_frozen_start) > 30):
+                break
+            elif t_since_seen_next is None and ((time.time() - t_check_frozen_start) > 20):
+                break
+        self.logger.add_scalar('check_frozen_time', time.time() - t_check_frozen_start, self.num_runs)
 
         # This didnt work :(
         lost_connection_image = frame[475:550, 675:1250]
@@ -416,9 +463,13 @@ class EldenEnv(gym.Env):
             if word in lost_connection_text:
                 lost_connection = True
         
-        if (len(loading_screen_history) > (30*30)) or lost_connection:
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{self.agent_ip}:6000/action/check_er", headers=headers)
+
+        if ((time.time() - t_check_frozen_start) > 30) or lost_connection or (not response.json()['ER']):
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
+            print(f"Check ER: {not response.json()['ER']}")
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
             time.sleep(5 * 60)
@@ -427,17 +478,14 @@ class EldenEnv(gym.Env):
             time.sleep(180)
 
             headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
-            headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/load_save", headers=headers)
 
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
 
 
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
+        #headers = {"Content-Type": "application/json"}
+        #requests.post(f"http://{self.agent_ip}:6000/recording/tag_latest/{self.max_reward}/{self.num_runs}'", headers=headers, data=json.dumps(self.parry_dict))
 
         observation = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
         self.done = False
@@ -461,17 +509,14 @@ class EldenEnv(gym.Env):
         self.parry_dict = {'vod_duration':None,
                            'parries': []}
 
-
-        headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/action/focus_window", headers=headers)
-
         self.t_start = time.time()
         headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
+        #requests.post(f"http://{self.agent_ip}:6000/recording/start", headers=headers)
 
-        time.sleep(5)
-
+        time.sleep(0.5)
         headers = {"Content-Type": "application/json"}
+        requests.post(f"http://{self.agent_ip}:6000/action/release_keys", headers=headers)
+        requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
         requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
 
         json_message = {'text': 'Step'}

@@ -5,22 +5,26 @@ import numpy as np
 import pytesseract
 import base64
 import requests
+from mss.linux import MSS as mss
+
 
 rewardGen = EldenReward(1, "templogs")
+sct = mss()
+
+
+def grab_screen_shot(sct):
+    for num, monitor in enumerate(sct.monitors[1:], 1):
+        # Get raw pixels from the screen
+        sct_img = sct.grab(monitor)
+
+        # Create the Image
+        #decoded = cv2.imdecode(np.frombuffer(sct_img, np.uint8), -1)
+        return cv2.cvtColor(np.asarray(sct_img), cv2.COLOR_BGRA2RGB)
+
 
 while True:
     t0 = time.time()
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(f"http://192.168.4.70:6000/action/focus_window", headers=headers)
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(f"http://192.168.4.70:6000/action/screen_shot", headers=headers)
-
-    #print(response.json())
-
-    frame = base64.decodebytes(bytes(response.json()['img'], 'utf-8'))
-    frame = np.fromstring(frame, np.uint8)
-    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-    #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = grab_screen_shot(sct)
     print(frame.shape)
 
     runes, stat, hp, death, dmg_reward, find_reward, time_since_seen_boss = rewardGen.update(frame)
@@ -32,21 +36,31 @@ while True:
     print('find_reward', find_reward)
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
-    #print(rewardGen.boss_hp)
     
+    
+    loading_screen_history = []
+    max_loading_screen_len = 30 * 15
+    time.sleep(2)
+    t_check_frozen_start = time.time()
+    while True:
+        frame = grab_screen_shot(sct)
+        next_text_image = frame[1015:1040, 155:205]
+        next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
+        cv2.imshow('data', next_text_image)
+        cv2.waitKey(1)
+        next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
+        loading_screen = "Next" in next_text
+        print("isNext:", loading_screen)
+        loading_screen_history.append(loading_screen)
+        if ((time.time() - t_check_frozen_start) > 7.5) and len(loading_screen_history) > 5:
+            all_false = True
+            for i in range(5):
+                if loading_screen_history[-(i + 1)]:
+                    all_false = False
+            if all_false:
+                break
+            if len(loading_screen_history) > (max_loading_screen_len):
+                break
 
-    hp_image = frame[51:55, 155:155 + int(rewardGen.max_hp * rewardGen.hp_ratio) - 20]
-    lower = np.array([0,150,75])
-    upper = np.array([150,255,125])
-    #lower = np.array([0,0,150])
-    #upper = np.array([255,255,255])
-    hsv = cv2.cvtColor(hp_image, cv2.COLOR_RGB2HSV)
-    mask = cv2.inRange(hsv, lower, upper)
-    matches = np.argwhere(mask==255)
-    print("PlayerHP:", len(matches) / (hp_image.shape[1] * hp_image.shape[0]))
-    
-    # 
-    cv2.imshow('data', mask)
-    cv2.waitKey(1)
     print(f"FPS: {1 / (time.time() - t0)}")
     #cv2.waitKey(1)

@@ -6,7 +6,6 @@ import subprocess
 
 from get_levels import get_stats
 from pynput import keyboard as kb
-from WindowManager import WindowMgr
 from flask import Flask, request, Response
 import re
 import datetime
@@ -23,14 +22,14 @@ import os
 import numpy as np
 import wave
 import base64
-import pyautogui
+from PIL import ImageGrab
 import cv2
 
 class EldenAgent:
     def __init__(self) -> None:
         self.keys_pressed = []
         self.keyboard = kb.Controller()
-        self.path_elden_ring = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\ELDEN RING\\Game\\eldenring.exe'
+        self.path_elden_ring = 'run_er.sh'
 
 
 app = Flask(__name__)
@@ -43,64 +42,33 @@ def update_status(text):
         f.write(text)
 
 
-@app.route('/action/screen_shot', methods=["POST"])
-def screen_shot_elden_ring():
-    if request.method == 'POST':
-        try:
-            print('Screenshot')
-            img = elden_agent.w.screen_shot()
-            img = np.asarray(img)
-            img = cv2.imencode('.jpg', img)[1]
-            img_str = base64.b64encode(img).decode()
-            return json.dumps({'img':img_str})
-        except Exception as e:
-            return json.dumps({'error':str(e)})
-    else:
-        return Response(status=400)
+def launch_er():
+    # The os.setsid() is passed in the argument preexec_fn so
+    # it's run after the fork() and before  exec() to run the shell.
+    subprocess.Popen('./run_er.sh', stdout=subprocess.PIPE, 
+                      shell=True, preexec_fn=os.setsid)
 
 
-@app.route('/action/focus_window', methods=["POST"])
-def focus_window():
-    if request.method == 'POST':
-        try:
-            print('FOCUS WINDOW(Do Nothing)')
-            try:
-                #update_status('Focusing window')
-                elden_agent.w = WindowMgr()
-                elden_agent.w.find_window_wildcard('ELDEN RING.*')
-                elden_agent.w.set_foreground()
-            except Exception as e:
-                print("ERROR: Could not fild Elden Ring Restarting")
-                update_status('Could not fild Elden Ring restarting')
-                time.sleep(60 * 3)
-                os.system("taskkill /f /im eldenring.exe")
-                time.sleep(60 * 5)
-                subprocess.run([elden_agent.path_elden_ring])
-                time.sleep(180)
-                elden_agent.keyboard.release('w')
-                elden_agent.keyboard.release('s')
-                elden_agent.keyboard.release('a')
-                elden_agent.keyboard.release('d')
+def get_er_process_ids():
+    proc1 = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE)
+    proc2 = subprocess.Popen(['grep', 'start_protected_game.exe'], stdin=proc1.stdout,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                press_q = True
-                for i in range(15):
-                    if press_q:
-                        elden_agent.keyboard.press("q")
-                        time.sleep(0.05)
-                        elden_agent.keyboard.release("q")
-                        press_q = False
-                    else:
-                        elden_agent.keyboard.press("e")
-                        time.sleep(0.05)
-                        elden_agent.keyboard.release("e")
-                        press_q = True
-                    time.sleep(1)
-                time.sleep(30)
-            return Response(status=200)
-        except Exception as e:
-            return json.dumps({'error':str(e)})
-    else:
-        return Response(status=400)
+    process_ids = []
+    proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+    out, err = proc2.communicate()
+    for line in str(out).split("james      "):
+        match = re.search(r"(\d+)+.*", line)
+        if not match is None:
+            process_ids.append(match[1])
+    return process_ids
+
+
+def stop_er():
+    cmd = ['kill', '-9']
+    for id in get_er_process_ids():
+        cmd.append(id)
+    subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
 
 @app.route('/action/load_save', methods=["POST"])
@@ -134,7 +102,7 @@ def load_save():
 def death_reset():
     if request.method == 'POST':
         try:
-            elden_agent.keys_pressed = []
+            #elden_agent.keys_pressed = []
             print('DEATH RESET')
             update_status('Death reset')
             curr_reward = None
@@ -260,24 +228,6 @@ def return_to_grace():
             elden_agent.keyboard.press('e')
             time.sleep(0.1)
             elden_agent.keyboard.release('e')
-
-            time.sleep(11)
-            return Response(status=200)
-        except Exception as e:
-            return json.dumps({'error':str(e)})
-    else:
-        return Response(status=400)
-
-
-@app.route('/action/lock_on', methods=["POST"])
-def lock_on():
-    if request.method == 'POST':
-        try:
-            #print('LOCK ON TOGGLE')
-            #update_status(f'Locking on')
-            #elden_agent.keyboard.press('q')
-            #time.sleep(0.05)
-            #elden_agent.keyboard.release('q')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -293,7 +243,7 @@ def init_fight():
             update_status(f'Initializing fight')
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(2.35)
+            time.sleep(2.50)
             elden_agent.keyboard.press('f')
             time.sleep(0.05)
             elden_agent.keyboard.release('f')
@@ -316,12 +266,12 @@ def init_fight():
             elden_agent.keyboard.release('a')
 
             #elden_agent.keyboard.press('w')
-            time.sleep(0.5)
+            time.sleep(1)
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release(kb.Key.space)
-            
+            time.sleep(0.1)
             elden_agent.keyboard.press('q')
-            time.sleep(0.05)
+            time.sleep(0.1)
             elden_agent.keyboard.release('q')
 
             return Response(status=200)
@@ -330,6 +280,21 @@ def init_fight():
     else:
         return Response(status=400)
 
+
+@app.route('/action/check_er', methods=["POST"])
+def check_er():
+    if request.method == 'POST':
+        try:
+            print('Check er')
+            ids = get_er_process_ids()
+            if len(ids) == 0:
+                return json.dumps({'ER':False})
+            else:
+                return json.dumps({'ER':True})
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
 
 
 @app.route('/recording/start', methods=["POST"])
@@ -365,58 +330,6 @@ def stop_recording():
         return Response(status=400)
 
 
-@app.route('/recording/get_num_files', methods=["POST"])
-def get_num_files():
-    if request.method == 'POST':
-        try:
-            print('get_num_files')
-            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
-            return json.dumps({'num_files': len(os.listdir(vod_dir))})
-        except Exception as e:
-            return json.dumps({'error':str(e)})
-    else:
-        return Response(status=400)
-
-
-
-@app.route('/recording/get_parry', methods=["POST"])
-def get_parry():
-    if request.method == 'POST':
-        try:
-            print('get_parry')
-            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
-            frames = b''
-            min_ts = None
-            if len(os.listdir(vod_dir)) == 0:
-                return Response(status=404)
-            for file in os.listdir(vod_dir):
-                file_name = file.split(".")[0]
-                ts = time.mktime(datetime.datetime.strptime(file_name, "%Y-%m-%d %H-%M-%S").timetuple())
-                if min_ts is None:
-                    min_ts = ts
-                    file_to_rename = file
-                elif min_ts > ts:
-                    min_ts = ts
-                    file_to_rename = file
-            
-            try:
-                source = os.path.join(vod_dir, file_to_rename)
-                clip = mp.VideoFileClip(source)
-                clip.audio.write_audiofile(r"tmp.wav", ffmpeg_params=["-ac", "1", "-ar", "16000"])
-                with wave.open("tmp.wav") as fd:
-                    params = fd.getparams()
-                    frames = fd.readframes(16000*2)
-                parry_sound_bytes = str(base64.b64encode(frames))
-                os.remove(source)
-                return json.dumps({'parry_sound_bytes':parry_sound_bytes})
-            except Exception as e:
-                print(str(e))
-                return json.dumps({'error':str(e)})
-        except Exception as e:
-            return json.dumps({'error':str(e)})
-    else:
-        return Response(status=400)
-
 @app.route('/recording/tag_latest/<max_reward>/<iteration>', methods=["POST"])
 def tag_file(max_reward=None, iteration=None):
     if request.method == 'POST':
@@ -427,9 +340,9 @@ def tag_file(max_reward=None, iteration=None):
 
             max_ts = None
             file_to_rename = None
-            vod_dir = r"E:\\Documents\\EldenRingAI\\vods"
-            saved_runs_dir = r"E:\\Documents\\EldenRingAI\\saved_runs"
-            parries_dir = r"E:\\Documents\\EldenRingAI\\parries"
+            vod_dir = r"vods"
+            saved_runs_dir = r"saved_runs"
+            parries_dir = r"parries"
 
             for file in os.listdir(vod_dir):
                 file_name = file.split(".")[0]
@@ -466,7 +379,8 @@ def stop_elden_ring():
         try:
             print('STOP ELDEN RING')
             update_status(f'Stop Elden Ring')
-            os.system("taskkill /f /im eldenring.exe")
+            while(len(get_er_process_ids()) > 0):
+                stop_er()
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -481,7 +395,7 @@ def start_elden_ring():
             print('START ELDEN RING')
             update_status(f'Start Elden Ring')
             
-            subprocess.run([elden_agent.path_elden_ring])
+            launch_er()
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -490,7 +404,8 @@ def start_elden_ring():
 
 
 @app.route('/action/release_keys', methods=["POST"])
-def release_keys():
+@app.route('/action/release_keys/<force>', methods=["POST"])
+def release_keys(force=False):
     if request.method == 'POST':
         try:
             print('RELEASE KEYS')
@@ -501,7 +416,7 @@ def release_keys():
                     elden_agent.keyboard.release(key)
                     elden_agent.keys_pressed.remove(key)
                 else:
-                    if time.time() - key[2] > key[1]:
+                    if ((time.time() - key[2]) > key[1]) or force:
                         elden_agent.keyboard.release(key[0])
                         elden_agent.keys_pressed.remove(key)
             return Response(status=200)
