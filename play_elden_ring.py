@@ -24,6 +24,7 @@ import wave
 import base64
 from PIL import ImageGrab
 import cv2
+import pyautogui
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -50,25 +51,36 @@ def launch_er():
 
 
 def get_er_process_ids():
-    proc1 = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE)
-    proc2 = subprocess.Popen(['grep', 'start_protected_game.exe'], stdin=proc1.stdout,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    with open("check_er.txt","wb") as out, open("check_er_stderr.txt","wb") as err:
+        proc1 = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE)
+        proc2 = subprocess.Popen(['grep', 'start_protected_game'], stdin=proc1.stdout, stdout=out, stderr=err)
+    
     process_ids = []
     proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
-    out, err = proc2.communicate()
-    for line in str(out).split("james      "):
-        match = re.search(r"(\d+)+.*", line)
-        if not match is None:
-            process_ids.append(match[1])
+    #proc2.stdout.close()
+    time.sleep(1)
+    with open('check_er.txt', 'r') as f:
+        for line in f.readlines():
+            match = re.search(r'james +(\d+)', line)
+            if not match is None:
+                process_ids.append(match[1])
+    print(process_ids)
     return process_ids
 
 
 def stop_er():
     cmd = ['kill', '-9']
     for id in get_er_process_ids():
+        print(id)
         cmd.append(id)
-    subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    for line in out.split('kill:'):
+        match = re.search(r'.*No such process.*', line)
+        if not match is None:
+            return False
+    return True
+
 
 
 @app.route('/action/load_save', methods=["POST"])
@@ -152,45 +164,62 @@ def custom_action(action):
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
                 elden_agent.keyboard.press('w')
+                #elden_agent.keyboard.tap('w')
                 # self.keys_pressed.append('w')
             elif action == 1:
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
                 elden_agent.keyboard.press('s')
+                #elden_agent.keyboard.tap('s')
                 # self.keys_pressed.append('s')
             elif action == 2:
                 elden_agent.keyboard.release('a')
                 elden_agent.keyboard.release('d')
                 elden_agent.keyboard.press('a')
+                #elden_agent.keyboard.tap('a')
                 # self.keys_pressed.append('a')
             elif action == 3:
                 elden_agent.keyboard.release('a')
                 elden_agent.keyboard.release('d')
                 elden_agent.keyboard.press('d')
+                #elden_agent.keyboard.tap('d')
                 # self.keys_pressed.append('d')
             elif action == 4:
                 elden_agent.keyboard.release('w')
                 elden_agent.keyboard.release('s')
                 elden_agent.keyboard.release('a')
                 elden_agent.keyboard.release('d')
+                pass
             elif action == 5:
-                press_key(kb.Key.space, 0.1)
+                #press_key(kb.Key.space, 0.1)
+                elden_agent.keyboard.tap(kb.Key.space)
             elif action == 6:
-                press_key('4', 0.1)
+                #press_key('4', 0.1)
+                elden_agent.keyboard.tap('4')
             elif action == 7:
-                press_key(kb.Key.shift_l, 0.1)
-                press_key('4', 0.1)
+                # press_key(kb.Key.shift_l, 0.1)
+                # press_key('4', 0.1)
+                elden_agent.keyboard.press(kb.Key.shift_l)
+                elden_agent.keyboard.tap('4')
+                elden_agent.keyboard.release(kb.Key.shift_l)
             elif action == 8:
-                press_key('5', 0.5)
+                #press_key('5', 0.5)
+                elden_agent.keyboard.tap('5')
             elif action == 9:
-                press_key(kb.Key.shift_l, 0.1)
-                press_key('5', 0.1)
+                # press_key(kb.Key.shift_l, 0.1)
+                # press_key('5', 0.1)
+                elden_agent.keyboard.press(kb.Key.shift_l)
+                elden_agent.keyboard.tap('5')
+                elden_agent.keyboard.release(kb.Key.shift_l)
             elif action == 10:
-                press_key('r', 0.1)
+                #press_key('r', 0.1)
+                elden_agent.keyboard.tap('r')
             elif action == 11:
-                press_key(kb.Key.space, 0.5)
+                #press_key(kb.Key.space, 0.5)
+                pass
             elif action == 12:
-                press_key('f', 0.1)
+                # press_key('f', 0.1)
+                elden_agent.keyboard.tap('f')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -209,24 +238,24 @@ def return_to_grace():
             elden_agent.keyboard.release('a')
             elden_agent.keyboard.release('d')
 
-            time.sleep(1)
+            time.sleep(2)
 
             elden_agent.keyboard.press('e')
             elden_agent.keyboard.press('3')
-            time.sleep(0.1)
+            time.sleep(0.2)
             elden_agent.keyboard.release('e')
             elden_agent.keyboard.release('3')
 
-            time.sleep(1)
+            time.sleep(2)
 
             elden_agent.keyboard.press(kb.Key.left)
-            time.sleep(0.1)
+            time.sleep(0.2)
             elden_agent.keyboard.release(kb.Key.left)
 
-            time.sleep(1)
+            time.sleep(2)
 
             elden_agent.keyboard.press('e')
-            time.sleep(0.1)
+            time.sleep(0.2)
             elden_agent.keyboard.release('e')
             return Response(status=200)
         except Exception as e:
@@ -287,7 +316,8 @@ def check_er():
         try:
             print('Check er')
             ids = get_er_process_ids()
-            if len(ids) == 0:
+            print(ids)
+            if len(ids) >= 2:
                 return json.dumps({'ER':False})
             else:
                 return json.dumps({'ER':True})
@@ -377,10 +407,69 @@ def tag_file(max_reward=None, iteration=None):
 def stop_elden_ring():
     if request.method == 'POST':
         try:
+            print(get_er_process_ids())
             print('STOP ELDEN RING')
             update_status(f'Stop Elden Ring')
-            while(len(get_er_process_ids()) > 0):
-                stop_er()
+            elden_agent.keyboard.press(kb.Key.cmd)
+            time.sleep(0.1)
+            elden_agent.keyboard.release(kb.Key.cmd)
+            time.sleep(0.5)
+            pyautogui.moveTo(50, 475)
+            pyautogui.click(button='right')
+            pyautogui.moveTo(100, 500)
+            pyautogui.click(button='left')
+            pyautogui.moveTo(50, 250)
+            pyautogui.click(button='left')
+            time.sleep(20)
+            #pyautogui.moveTo(750, 1250)
+            #pyautogui.click(button='left')
+            elden_agent.keyboard.press(kb.Key.enter)
+            time.sleep(0.1)
+            elden_agent.keyboard.release(kb.Key.enter)
+            time.sleep(1)
+            elden_agent.keyboard.press(kb.Key.enter)
+            time.sleep(0.1)
+            elden_agent.keyboard.release(kb.Key.enter)
+            time.sleep(30)
+            #while (len(get_er_process_ids()) > 1):
+            pyautogui.moveTo(50, 250)
+            time.sleep(1)
+            pyautogui.click(button='right')
+            time.sleep(1)
+            pyautogui.moveTo(115, 495)
+            time.sleep(1)
+            pyautogui.click(button='left')
+            try:
+                if len(get_er_process_ids) > 1:
+                    stop_er()
+            except Exception as e:
+                print(str(e))
+            time.sleep(5)
+            pyautogui.moveTo(50, 250)
+            pyautogui.click(button='left')
+            time.sleep(30)
+            elden_agent.keyboard.press(kb.Key.enter)
+            time.sleep(0.1)
+            elden_agent.keyboard.release(kb.Key.enter)
+            time.sleep(1)
+            elden_agent.keyboard.press(kb.Key.enter)
+            time.sleep(0.1)
+            elden_agent.keyboard.release(kb.Key.enter)
+            time.sleep(60)
+            try:
+                if len(get_er_process_ids) > 1:
+                    stop_er()
+            except Exception as e:
+                print(str(e))
+            time.sleep(60)
+            pyautogui.moveTo(50, 250)
+            time.sleep(1)
+            pyautogui.click(button='right')
+            time.sleep(1)
+            pyautogui.moveTo(115, 495)
+            time.sleep(1)
+            pyautogui.click(button='left')
+            time.sleep(5)
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

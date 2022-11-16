@@ -27,7 +27,7 @@ while True:
     frame = grab_screen_shot(sct)
     print(frame.shape)
 
-    runes, stat, hp, death, dmg_reward, find_reward, time_since_seen_boss = rewardGen.update(frame)
+    runes, stat, hp, death, dmg_reward, find_reward, time_since_seen_boss, _ = rewardGen.update(frame)
     print("Runes:", runes)
     print("Stat:", stat)
     print("HP:", hp)
@@ -37,30 +37,29 @@ while True:
     print(rewardGen.current_stats)
     print(rewardGen.seen_boss)
     
-    
-    loading_screen_history = []
-    max_loading_screen_len = 30 * 15
-    time.sleep(2)
     t_check_frozen_start = time.time()
+    t_since_seen_next = None
+    num_next = 0
     while True:
         frame = grab_screen_shot(sct)
         next_text_image = frame[1015:1040, 155:205]
         next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
-        cv2.imshow('data', next_text_image)
-        cv2.waitKey(1)
         next_text = pytesseract.image_to_string(next_text_image,  lang='eng',config='--psm 6 --oem 3')
-        loading_screen = "Next" in next_text
-        print("isNext:", loading_screen)
-        loading_screen_history.append(loading_screen)
-        if ((time.time() - t_check_frozen_start) > 7.5) and len(loading_screen_history) > 5:
-            all_false = True
-            for i in range(5):
-                if loading_screen_history[-(i + 1)]:
-                    all_false = False
-            if all_false:
-                break
-            if len(loading_screen_history) > (max_loading_screen_len):
-                break
 
+        lower = np.array([0,0,75])
+        upper = np.array([255,255,255])
+        hsv = cv2.cvtColor(next_text_image, cv2.COLOR_RGB2HSV)
+        mask = cv2.inRange(hsv, lower, upper)
+        matches = np.argwhere(mask==255)
+        percent_match = len(matches) / (mask.shape[0] * mask.shape[1])
+        next_text = pytesseract.image_to_string(mask,  lang='eng',config='--psm 6 --oem 3')
+        loading_screen = "Next" in next_text or "next" in next_text
+        if loading_screen or abs(percent_match - 0.195) < 0.02:
+            t_since_seen_next = time.time()
+            num_next += 1
+        print(num_next)
+        print(percent_match)
+        cv2.imshow('demo', mask)
+        cv2.waitKey(1)
     print(f"FPS: {1 / (time.time() - t0)}")
-    #cv2.waitKey(1)
+    

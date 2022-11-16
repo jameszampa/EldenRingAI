@@ -1,14 +1,17 @@
-# bot.py
-import os # for importing env vars for the bot to use
+import os
 import re
 import nltk
 import json
 import random
+import threading
+import tensorflow as tf
+
 from twitchio.ext import commands
 from twitchio.ext import routines
 from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 
 with open('twitch_creds.json', 'r') as f:
@@ -26,6 +29,29 @@ sent_tokens = nltk.sent_tokenize(raw)# converts to list of sentences
 word_tokens = nltk.word_tokenize(raw)# converts to list of words
 
 lemmer = nltk.stem.WordNetLemmatizer()
+LOGDIR = 'logs'
+
+
+def get_min_boss_hp():
+    newest_log = 0
+    for directory in os.listdir(LOGDIR):
+        if int(directory) > newest_log:
+            newest_log = int(directory)
+
+    experiment_dir = os.path.join(LOGDIR, str(newest_log))
+    min_boss_hp = 1
+    for ppo_dir in os.listdir(experiment_dir):
+        ppo_path = os.path.join(experiment_dir, ppo_dir)
+        for event_file in os.listdir(ppo_path):
+            for e in tf.compat.v1.train.summary_iterator(os.path.join(ppo_path, event_file)):
+                for v in e.summary.value:
+                    try:
+                        if v.tag == 'boss_hp' and v.simple_value < min_boss_hp:
+                            min_boss_hp = v.simple_value
+                    except:
+                        pass
+    return min_boss_hp
+
 
 def LemTokens(tokens):
     return [lemmer.lemmatize(token) for token in tokens]
@@ -44,7 +70,7 @@ def response(user_response):
     flat.sort()
     req_tfidf = flat[-2]
     if(req_tfidf==0):
-        robot_response=robot_response+"Try another question..."
+        robot_response=robot_response+"Thanks for the question. Maybe try again later..."
         return robot_response
     else:
         robot_response = robot_response+sent_tokens[idx]
@@ -105,10 +131,14 @@ class Bot(commands.Bot):
     
 
     @commands.command()
-    async def askaquestion(self, ctx: commands.Context, arg):
+    async def askaquestion(self, ctx: commands.Context, *argv):
+        q = ""
+        for arg in argv:
+            q += arg + ' '
+
         with open('twitchbot_log.txt', 'a') as f:
-            f.write(f"Author: {ctx.author.name} Question: {arg}\n")
-        user_response=arg
+            f.write(f"Author: {ctx.author.name} Question: {q}\n")
+        user_response=q
         bot_response = response(user_response)
         sent_tokens.remove(user_response)
         await ctx.send(f"@{ctx.author.name} {bot_response}")
@@ -120,9 +150,13 @@ class Bot(commands.Bot):
         user_response=random_q
         bot_response = response(user_response)
         sent_tokens.remove(user_response)
-        await ctx.send(f'?askaquestion "{random_q}"')
+        await ctx.send(f'?askaquestion {random_q}')
         await ctx.send(f'@eldenringai {bot_response}')
 
 
-bot = Bot()
-bot.run()
+while True:
+    try:
+        bot = Bot()
+        bot.run()
+    except Exception as e:
+        print(str(e))

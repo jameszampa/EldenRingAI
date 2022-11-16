@@ -50,7 +50,7 @@ class EldenReward:
         self.agent_ip = 'localhost'
         self._request_stats()
         self.boss_max_hp = 3200
-        self.logger = SummaryWriter(os.path.join(logdir, 'PPO_0'))
+        self.logger = SummaryWriter(os.path.join(logdir, 'RecurrentPPO_0'))
         self.iteration = 0
         self.boss_hp = 1
         self.time_since_last_hp_change = time.time()
@@ -63,6 +63,11 @@ class EldenReward:
         self.min_boss_hp = 1
         self.time_since_check_for_boss = time.time()
         self.hp_history = []
+        self.time_since_taken_dmg = time.time()
+        self.curr_stam = 1
+        self.time_since_dmg_healed = time.time()
+        self.hits_taken = 0
+        self.time_since_dodge = None
         
 
 
@@ -138,6 +143,13 @@ class EldenReward:
                 #     if self.current_stats[i] != self.previous_stats[i]:
                 #         stat_reward += (self.current_stats[i] - self.previous_stats[i]) * 10000
 
+        stam_image = frame[85:90, 155:155 + 290]
+        lower = np.array([0,100,0])
+        upper = np.array([150,255,150])
+        hsv = cv2.cvtColor(stam_image, cv2.COLOR_RGB2HSV)
+        mask = cv2.inRange(hsv, lower, upper)
+        matches = np.argwhere(mask==255)
+        self.curr_stam = len(matches) / (stam_image.shape[1] * stam_image.shape[0])
 
         hp_reward = 0
         total_hp_reward = 0
@@ -170,12 +182,18 @@ class EldenReward:
                 if hp_reward != 0:
                     self.time_since_last_hp_change = time.time()
                 if hp_reward > 0:
-                    hp_reward /= 10
-                self.hp_history.append(hp_reward)
-                # Use the hp history to effect reward, hopefully making taking damage more punishing
-                num_samples = 15 if len(self.hp_history) > 15 else len(self.hp_history)
-                for i in range(num_samples):
-                    total_hp_reward += self.hp_history[-(i + 1)]
+                    self.time_since_dmg_healed = time.time()
+                    hp_reward *= 2
+                if hp_reward < 0:
+                    self.time_since_taken_dmg = time.time()
+                    if not self.time_since_dodge is None:
+                        self.taken_dmg_during_dodge = True
+                total_hp_reward = hp_reward
+                # self.hp_history.append(hp_reward)
+                # # Use the hp history to effect reward, hopefully making taking damage more punishing
+                # num_samples = 15 if len(self.hp_history) > 15 else len(self.hp_history)
+                # for i in range(num_samples):
+                #     total_hp_reward += self.hp_history[-(i + 1)]
                 
 
 
@@ -232,7 +250,7 @@ class EldenReward:
             self.boss_hp = 1
 
         if abs(boss_hp - self.boss_hp) < 0.08 and self.time_since_last_boss_hp_change > 1.0:
-            boss_dmg_reward = (self.boss_hp - boss_hp) * 5
+            boss_dmg_reward = (self.boss_hp - boss_hp) / 0.05
             if boss_dmg_reward < 0:
                 boss_dmg_reward = 0
             self.boss_hp = boss_hp
@@ -268,11 +286,20 @@ class EldenReward:
             percent_through_fight_reward = 0
         self.logger.add_scalar('boss_hp', self.boss_hp, self.iteration)
 
+        dodge_reward = 0
+        if not self.time_since_dodge is None and (time.time() - self.time_since_dodge) > 1:
+            if not self.taken_dmg_during_dodge:
+                dodge_reward = -1
+            else:
+                dodge_reward = 1
+            self.time_since_dodge = None
+
+
         t_end = time.time()
-        print("Reward Player HP: {:.5f}".format(t1 - t0))
-        print("Reward Boss Find: {:.5f}".format(t2 - t1))
-        print("Reward Boss HP: {:.5f}".format(t3 - t2))
-        print("Reward Percent through: {:.5f}".format(t_end - t3))
+        # print("Reward Player HP: {:.5f}".format(t1 - t0))
+        # print("Reward Boss Find: {:.5f}".format(t2 - t1))
+        # print("Reward Boss HP: {:.5f}".format(t3 - t2))
+        # print("Reward Percent through: {:.5f}".format(t_end - t3))
 
 
         if not self.death and not self.curr_hp is None:
@@ -282,14 +309,19 @@ class EldenReward:
                 time_alive_reward = (time_alive * 0.01) * (self.time_alive_multiplier)
             else:
                 time_alive_reward = 0
+            time_since_taken_dmg_reward = ((time.time() - self.time_since_taken_dmg) / 120)
+            time_since_taken_dmg_reward = 1 if time_since_taken_dmg_reward > 1 else time_since_taken_dmg_reward
+            time_since_taken_dmg_reward *= 0.5
+
             if self.death:
-                hp_reward = -1
+                hp_reward = -5
+                boss_dmg_reward = (1 - self.boss_hp) * 5
                 self.time_since_death = time.time()
                 #self.curr_hp = self.max_hp
                 self.death = False
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
                 self.boss_hp_history = []
-                return time_alive_reward, percent_through_fight_reward, total_hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward
             else:
-                return time_alive_reward, percent_through_fight_reward, total_hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward
