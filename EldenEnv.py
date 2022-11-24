@@ -1,4 +1,5 @@
 import os
+import re
 import cv2
 import gym
 import time
@@ -6,6 +7,7 @@ import json
 import wave
 import pyaudio
 import requests
+import datetime
 import threading
 import numpy as np
 import pytesseract
@@ -18,7 +20,7 @@ from EldenReward import EldenReward
 from tensorboardX import SummaryWriter
 
 
-HORIZON_WINDOW = 30 * 120 * 2
+HORIZON_WINDOW = 6000
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -43,11 +45,7 @@ DISCRETE_ACTIONS = {'w': 'run_forwards',
                     'space': 'dodge',
                     'm1': 'attack',
                     'shift+m1': 'strong_attack',
-                    'm2': 'guard',
-                    'shift+m2': 'skill',
-                    'r': 'use_item',
-                    'space_hold': 'sprint',
-                    'f': 'jump'}
+                    'r': 'use_item'}
 
 N_DISCRETE_ACTIONS = len(DISCRETE_ACTIONS)
 N_CHANNELS = 3
@@ -157,22 +155,9 @@ def take_action(action):
         elden_agent_keyboard.release(kb.Key.shift_l)
     elif action == 8:
         #press_key('5', 0.5)
-        elden_agent_keyboard.tap('5')
-    elif action == 9:
-        # press_key(kb.Key.shift_l, 0.1)
-        # press_key('5', 0.1)
-        elden_agent_keyboard.press(kb.Key.shift_l)
-        elden_agent_keyboard.tap('5')
-        elden_agent_keyboard.release(kb.Key.shift_l)
-    elif action == 10:
-        #press_key('r', 0.1)
+        #elden_agent_keyboard.tap('5')
         elden_agent_keyboard.tap('r')
-    elif action == 11:
-        #press_key(kb.Key.space, 0.5)
-        pass
-    elif action == 12:
-        # press_key('f', 0.1)
-        elden_agent_keyboard.tap('f')
+        
 
 
 class AudioRecorder():
@@ -240,7 +225,7 @@ class AudioRecorder():
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, logdir):
+    def __init__(self, logdir, resume=False):
         super(EldenEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -255,7 +240,7 @@ class EldenEnv(gym.Env):
         self.observation_space = gym.spaces.Dict(spaces_dict)
 
         self.agent_ip = 'localhost'
-        self.logger = SummaryWriter(os.path.join(logdir, 'RecurrentPPO_0'))
+        self.logger = SummaryWriter(os.path.join(logdir, 'A2C_0'))
         
         headers = {"Content-Type": "application/json"}
         requests.post(f"http://{self.agent_ip}:6000/action/start_elden_ring", headers=headers)
@@ -274,7 +259,10 @@ class EldenEnv(gym.Env):
         self.first_step = False
         self.consecutive_deaths = 0
         self.locked_on = False
-        self.num_runs = 0
+        if not resume:
+            self.num_runs = 0
+        else:
+            self.num_runs = 2863
         self.max_reward = None
         self.time_since_r = time.time()
         self.reward_history = []
@@ -289,7 +277,18 @@ class EldenEnv(gym.Env):
         self.boss_hp_end_history = []
         self.action_history = []
         self.time_since_restart = time.time()
-        threading.Thread(target=timer_callback, args=(time.time(),)).start()
+        self.wasHealed = False
+        if not resume:
+            threading.Thread(target=timer_callback, args=(time.time(),)).start()
+        else:
+            with open('obs_timer.txt', 'r') as f:
+                matches = re.match(r"(\d\d):(\d\d):(\d\d):(\d\d).*", f.read())
+            seconds = int(matches[4])
+            minutes = int(matches[3])
+            hours = int(matches[2])
+            days = int(matches[1])
+            original_ts = time.time() - (seconds + (minutes * 60) + (hours * 60 * 60) + (days * 24 * 60* 60))
+            threading.Thread(target=timer_callback, args=(original_ts,)).start()
 
         #subprocess.Popen(['python', 'timer.py', '>', 'obs_timer.txt'])
 
@@ -326,9 +325,9 @@ class EldenEnv(gym.Env):
         #     self.logger.add_scalar('time_between_steps', t0 - self.prev_step_end_ts, self.iteration)
 
         parry_reward = 0
-        if int(action) == 9:
-            self.audio_cap.start(self.iteration)
-            self.parry_dict['parries'].append(time.time() - self.t_start)
+        # if int(action) == 9:
+        #     self.audio_cap.start(self.iteration)
+        #     self.parry_dict['parries'].append(time.time() - self.t_start)
         # if int(action) == 9:
         #     if self.t_since_parry is None or (time.time() - self.t_since_parry) > 2.1:
         #         headers = {"Content-Type": "application/json"}
@@ -368,19 +367,19 @@ class EldenEnv(gym.Env):
         t2 = time.time()
         time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen, since_taken_dmg_reward, dodge_reward = self.rewardGen.update(frame)
 
-        audio_buffer = self.audio_cap.get_audio()
-        if not audio_buffer is None:
-            audio_input = np.expand_dims(np.frombuffer(audio_buffer, dtype=np.int16), axis=-1)
-            audio_input = np.expand_dims(audio_input, axis=0)
-            audio_input = audio_input.astype(np.float32)
-            #print(audio_input.shape)
-            fft = audio_to_fft(audio_input)
-            pred = self.parry_detector(fft)
-            pred = np.squeeze(pred)
-            pred_idx = np.argmax(pred, axis=0)
-            #print(pred_idx)
-            if CLASS_NAMES[int(pred_idx)] == 'successful_parries' and pred[int(pred_idx)] > 0.99:
-                parry_reward = 1
+        # audio_buffer = self.audio_cap.get_audio()
+        # if not audio_buffer is None:
+        #     audio_input = np.expand_dims(np.frombuffer(audio_buffer, dtype=np.int16), axis=-1)
+        #     audio_input = np.expand_dims(audio_input, axis=0)
+        #     audio_input = audio_input.astype(np.float32)
+        #     #print(audio_input.shape)
+        #     fft = audio_to_fft(audio_input)
+        #     pred = self.parry_detector(fft)
+        #     pred = np.squeeze(pred)
+        #     pred_idx = np.argmax(pred, axis=0)
+        #     #print(pred_idx)
+        #     if CLASS_NAMES[int(pred_idx)] == 'successful_parries' and pred[int(pred_idx)] > 0.99:
+        #         parry_reward = 1
 
         t3 = time.time()
         self.logger.add_scalar('time_alive', time_alive, self.iteration)
@@ -391,16 +390,16 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('parry_reward', parry_reward, self.iteration)
         self.logger.add_scalar('since_taken_dmg_reward', since_taken_dmg_reward, self.iteration)
         self.logger.add_scalar('dodge_reward', dodge_reward, self.iteration)
-        
-        
-        if hp > 0 and (time.time() - self.time_since_r) > 1.0:
-            hp = 0
 
-        self.reward = hp + dmg_reward + dodge_reward #  + since_taken_dmg_reward # + parry_reward # time_alive + percent_through find_reward + 
+        self.reward = hp + dmg_reward # + dodge_reward #  + since_taken_dmg_reward # + parry_reward # time_alive + percent_through find_reward + 
 
-        if int(action) == 5:
-            self.rewardGen.taken_dmg_during_dodge = False
-            self.rewardGen.time_since_dodge = time.time()
+        # if int(action) == 5 and self.rewardGen.time_since_dodge is None:
+        #     self.rewardGen.taken_dmg_during_dodge = False
+        #     self.rewardGen.time_since_dodge = time.time()
+
+        # if int(action) == 5 and self.rewardGen.time_since_dodge is None:
+        #     self.rewardGen.taken_dmg_during_dodge = False
+        #     self.rewardGen.time_since_dodge = time.time()
 
         #print('custom action')
         if not self.death and not self.done:
@@ -417,7 +416,7 @@ class EldenEnv(gym.Env):
                 self.reward = -1
                 self.rewardGen.time_since_death = time.time()
             else:
-                if int(action) == 10:
+                if int(action) == 8:
                     self.time_since_r = time.time()
                 take_action(action)
                 
@@ -679,6 +678,7 @@ class EldenEnv(gym.Env):
         self.rewardGen.time_since_reset = time.time()
         self.rewardGen.time_since_dmg_healed = time.time()
         self.rewardGen.hits_taken = 0
+        self.rewardGen.total_dmg_taken = 0
         
         self.rewardGen.boss_hp = 1
         if len(self.reward_history) > 0:

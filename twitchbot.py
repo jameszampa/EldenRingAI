@@ -127,7 +127,7 @@ class Bot(commands.Bot):
                 except:
                     self.lowest_boss_hp = 100
             
-            await self.connected_channels[0].send('!title A.I. fights Tree Sentinel Attempt: {} Avg End Boss HP: {}% !code !howtoaskaquestion'.format(self.attempt, self.lowest_boss_hp))
+            await self.connected_channels[0].send('!title A.I. fights Tree Sentinel Attempt: {} !code !howtoaskaquestion'.format(self.attempt))
     
 
     @commands.command()

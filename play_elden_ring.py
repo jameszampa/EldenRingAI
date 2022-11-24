@@ -485,6 +485,10 @@ def start_elden_ring():
             update_status(f'Start Elden Ring')
             
             launch_er()
+            time.sleep(5)
+            pyautogui.moveTo(1220, 667)
+            time.sleep(1)
+            pyautogui.click(button='left')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
