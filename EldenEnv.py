@@ -28,6 +28,8 @@ if gpus:
   try:
     tf.config.set_visible_devices(gpus[1], 'GPU')
     tf.config.experimental.set_memory_growth(gpus[1], True)
+    tf.config.set_visible_devices(gpus[0], 'GPU')
+    tf.config.experimental.set_memory_growth(gpus[0], True)
     logical_gpus = tf.config.list_logical_devices('GPU')
     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
   except RuntimeError as e:
@@ -309,6 +311,7 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
             json_message = {'text': 'Step'}
             requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+            self.rewardGen.dmg_timer = time.time()
         #print('step start')
         t0 = time.time()
         # if not self.first_step:
@@ -365,7 +368,7 @@ class EldenEnv(gym.Env):
         frame = self.grab_screen_shot()
         #print('reward update')
         t2 = time.time()
-        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen, since_taken_dmg_reward, dodge_reward = self.rewardGen.update(frame)
+        time_alive, percent_through, hp, self.death, dmg_reward, find_reward, time_since_boss_seen, since_taken_dmg_reward, dodge_reward, no_dmg_reward = self.rewardGen.update(frame)
 
         # audio_buffer = self.audio_cap.get_audio()
         # if not audio_buffer is None:
@@ -390,8 +393,8 @@ class EldenEnv(gym.Env):
         self.logger.add_scalar('parry_reward', parry_reward, self.iteration)
         self.logger.add_scalar('since_taken_dmg_reward', since_taken_dmg_reward, self.iteration)
         self.logger.add_scalar('dodge_reward', dodge_reward, self.iteration)
-
-        self.reward = hp + dmg_reward # + dodge_reward #  + since_taken_dmg_reward # + parry_reward # time_alive + percent_through find_reward + 
+        self.logger.add_scalar('no_dmg_reward', no_dmg_reward, self.iteration)
+        self.reward = hp + dmg_reward + no_dmg_reward # + dodge_reward #  + since_taken_dmg_reward # + parry_reward # time_alive + percent_through find_reward + 
 
         # if int(action) == 5 and self.rewardGen.time_since_dodge is None:
         #     self.rewardGen.taken_dmg_during_dodge = False

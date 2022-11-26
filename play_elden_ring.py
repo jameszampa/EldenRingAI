@@ -124,15 +124,11 @@ def death_reset():
                     reward_match = re.search("Reward: (.+)", line)
                     if not reward_match is None:
                         curr_reward = float(reward_match[1])
-                    resets_match = re.search("Num resets: (.+)", line)
+                    resets_match = re.search("Attempt: (.+)", line)
                     if not resets_match is None:
                         curr_resets = int(resets_match[1])
             with open('obs_log.txt', 'w') as f:
-                f.write(f"Dead: {True}")
-                f.write("\n")
-                f.write("FPS: {:.2f}".format(curr_reward))
-                f.write("\n")
-                f.write(f"Num resets: {curr_resets}")
+                f.write(f"Attempt: {curr_resets}")
 
             return Response(status=200)
         except Exception as e:
@@ -485,7 +481,7 @@ def start_elden_ring():
             update_status(f'Start Elden Ring')
             
             launch_er()
-            time.sleep(5)
+            time.sleep(15)
             pyautogui.moveTo(1220, 667)
             time.sleep(1)
             pyautogui.click(button='left')
@@ -543,7 +539,7 @@ def log_to_obs():
                 #f.write("\n")
                 #f.write("FPS: {:.2f}".format(float(request_json['reward'])))
                 #f.write("\n")
-                f.write(f"Num resets: {request_json['num_run']}")
+                f.write(f"Attempt: {request_json['num_run']}")
             with open('lowest_boss_hp.txt', 'w') as f:
                 f.write(f"{float(request_json['lowest_boss_hp'])}")
             return Response(status=200)

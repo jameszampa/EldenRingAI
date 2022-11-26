@@ -3,6 +3,7 @@ import re
 import nltk
 import json
 import random
+import requests
 import threading
 import tensorflow as tf
 
@@ -13,11 +14,17 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-
 with open('twitch_creds.json', 'r') as f:
-    ACCESS_TOKEN = json.loads(f.read())['ACCESS_TOKEN']
+    j_obj = json.loads(f.read())
+
+BOT_ACCESS_TOKEN = j_obj['BOT_ACCESS_TOKEN']
+BOT_CLIENT_ID = j_obj['BOT_CLIENT_ID']
 BOT_PREFIX='?'
 CHANNEL='eldenringai'
+CHANNEL_ID='837561294'
+BOT_CLIENT_SECRET = j_obj['BOT_CLIENT_SECRET']
+CHANNEL_CLIENT_ID = j_obj['CHANNEL_CLIENT_ID']
+CHANNEL_ACCESS_TOKEN = j_obj['CHANNEL_ACCESS_TOKEN']
 
 
 nltk.download('popular', quiet=True) #downloads packages
@@ -82,7 +89,7 @@ class Bot(commands.Bot):
         # Initialise our Bot with our access token, prefix and a list of channels to join on boot...
         # prefix can be a callable, which returns a list of strings or a string...
         # initial_channels can also be a callable which returns a list of strings...
-        super().__init__(token=ACCESS_TOKEN, prefix=BOT_PREFIX, initial_channels=[CHANNEL])
+        super().__init__(token=BOT_ACCESS_TOKEN, prefix=BOT_PREFIX, initial_channels=[CHANNEL])
         self.attempt = 0
         self.lowest_boss_hp = 1
         self.random_question_list = [
@@ -113,7 +120,7 @@ class Bot(commands.Bot):
         num_run = 0
         with open('obs_log.txt', 'r') as f:
             for line in f.readlines():
-                match = re.search(r"Num resets: (\d+)", line)
+                match = re.search(r"Attempt: (\d+)", line)
                 if not match is None:
                     num_run = int(match[1])
         if num_run == 0:
@@ -126,8 +133,19 @@ class Bot(commands.Bot):
                     self.lowest_boss_hp = int(float(f.read()) * 100)
                 except:
                     self.lowest_boss_hp = 100
-            
-            await self.connected_channels[0].send('!title A.I. fights Tree Sentinel Attempt: {} !code !howtoaskaquestion'.format(self.attempt))
+
+            url = "https://api.twitch.tv/helix/channels?broadcaster_id=" + CHANNEL_ID
+            headers = \
+            {
+                "Client-Id": CHANNEL_CLIENT_ID,
+                "Authorization": "Bearer " + CHANNEL_ACCESS_TOKEN,
+                "Content-Type": "application/json"
+            }
+            data = {}
+            data["title"] = "A.I. fights Tree Sentinel Attempt: {} !code !howtoaskaquestion".format(self.attempt)
+            response = requests.patch(url=url, headers=headers, data=json.dumps(data))
+            print(response)
+            #await self.connected_channels[0].send('!title A.I. fights Tree Sentinel Attempt: {} !code !howtoaskaquestion'.format(self.attempt))
     
 
     @commands.command()

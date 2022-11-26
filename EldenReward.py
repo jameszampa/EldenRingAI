@@ -69,6 +69,7 @@ class EldenReward:
         self.hits_taken = 0
         self.time_since_dodge = None
         self.total_dmg_taken = 0
+        self.dmg_timer = time.time()
         
 
 
@@ -186,16 +187,18 @@ class EldenReward:
                     self.time_since_dmg_healed = time.time()
                     hp_reward *= 2
                 if hp_reward < 0:
+                    old_time_since_taken_dmg = self.time_since_taken_dmg
                     self.time_since_taken_dmg = time.time()
                     if not self.time_since_dodge is None:
                         self.taken_dmg_during_dodge = True
                     self.total_dmg_taken += hp_reward
                 if hp_reward < 0:
-                    total_hp_reward = -10
+                    old_time_since_taken_dmg = 30 if old_time_since_taken_dmg > 30 else old_time_since_taken_dmg
+                    total_hp_reward = (-100 * ((30 - old_time_since_taken_dmg) / 30)) - 10
                 elif hp_reward > 0:
                     total_hp_reward = 1
-                else:
-                    total_hp_reward = 0
+                elif self.time_since_taken_dmg < 0.25:
+                    total_hp_reward = -10
                 
                 # self.hp_history.append(hp_reward)
                 # # Use the hp history to effect reward, hopefully making taking damage more punishing
@@ -311,6 +314,12 @@ class EldenReward:
         elif self.boss_hp < 0.25:
             boss_dmg_reward *= 8
 
+        no_dmg_taken_reward = 0
+        if (time.time() - self.dmg_timer) > 0.5:
+            if self.time_since_taken_dmg > 0.5:
+                no_dmg_taken_reward = 1
+            self.dmg_timer = time.time()
+
         t_end = time.time()
         # print("Reward Player HP: {:.5f}".format(t1 - t0))
         # print("Reward Boss Find: {:.5f}".format(t2 - t1))
@@ -337,6 +346,6 @@ class EldenReward:
                 self.seen_boss = False
                 self.time_since_last_hp_change = time.time()
                 self.boss_hp_history = []
-                return time_alive_reward, percent_through_fight_reward, total_hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, True, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward, no_dmg_taken_reward
             else:
-                return time_alive_reward, percent_through_fight_reward, total_hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward
+                return time_alive_reward, percent_through_fight_reward, total_hp_reward, self.death, boss_dmg_reward, boss_find_reward, self.time_since_seen_boss, time_since_taken_dmg_reward, dodge_reward, no_dmg_taken_reward
