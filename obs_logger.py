@@ -14,7 +14,7 @@ app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
 keyboard = pynput.keyboard.Controller()
 
 @app.route('/obs/log/attempt_update', methods=["POST"])
-def log_to_obs():
+def attempt_update():
     if request.method == 'POST':
         try:
             print('Log to OBS')
@@ -29,7 +29,7 @@ def log_to_obs():
 
 
 @app.route('/obs/log/timer_update', methods=["POST"])
-def log_to_obs():
+def timer_update():
     if request.method == 'POST':
         try:
             print('Log to OBS')
@@ -44,7 +44,7 @@ def log_to_obs():
 
 
 @app.route('/obs/recording/stop', methods=["POST"])
-def log_to_obs():
+def stop_rec():
     if request.method == 'POST':
         try:
             print('start recording')
@@ -57,7 +57,7 @@ def log_to_obs():
 
 
 @app.route('/obs/recording/start', methods=["POST"])
-def log_to_obs():
+def start_rec():
     if request.method == 'POST':
         try:
             print('start recording')
