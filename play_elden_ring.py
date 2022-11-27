@@ -294,9 +294,7 @@ def init_fight():
             time.sleep(1)
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release(kb.Key.space)
-            time.sleep(1)
-            elden_agent.keyboard.tap('q')
-            time.sleep(1)
+            time.sleep(2)
             elden_agent.keyboard.tap('q')
             
             return Response(status=200)

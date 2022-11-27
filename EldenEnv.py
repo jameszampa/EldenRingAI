@@ -69,11 +69,13 @@ with open('vigor_chart.csv', 'r') as v_chart:
 
 def timer_callback(t_start):
     while True:
-        with open('obs_timer.txt', 'w') as f:
-            duration = time.gmtime(time.time() - t_start)
-            days = int(np.floor((time.time() - t_start) / (24 * 60 * 60)))
-            f.write(str(days).zfill(2) + ":")
-            f.write(str(time.strftime('%H:%M:%S', duration)))
+        duration = time.gmtime(time.time() - t_start)
+        days = int(np.floor((time.time() - t_start) / (24 * 60 * 60)))
+        out_str = str(days).zfill(2) + ":"
+        out_str += str(time.strftime('%H:%M:%S', duration))
+        headers = {"Content-Type": "application/json"}
+        json_message = {'timer':out_str}
+        requests.post(f"http://192.168.4.67:6000/obs/log/timer_update", headers=headers, data=json.dumps(json_message))
         time.sleep(1)
 
 
@@ -225,7 +227,7 @@ class AudioRecorder():
 class EldenEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, logdir, resume=False):
+    def __init__(self, logdir, resume=False, stream_pc_ip=None):
         super(EldenEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -238,7 +240,7 @@ class EldenEnv(gym.Env):
             'state': spaces.Box(low=0, high=1, shape=(2,), dtype=np.float32),
         }
         self.observation_space = gym.spaces.Dict(spaces_dict)
-
+        self.stream_pc_ip = stream_pc_ip
         self.agent_ip = 'localhost'
         self.logger = SummaryWriter(os.path.join(logdir, 'A2C_0'))
         
@@ -307,8 +309,7 @@ class EldenEnv(gym.Env):
         if self.first_step:
             headers = {"Content-Type": "application/json"}
             requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
-            json_message = {'text': 'Step'}
-            requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+            requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/start", headers=headers)
             self.rewardGen.dmg_timer = time.time()
         #print('step start')
         t0 = time.time()
@@ -411,6 +412,7 @@ class EldenEnv(gym.Env):
                     take_action(4)
                     #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                     time.sleep(1)
+                requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
                 #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
@@ -429,6 +431,7 @@ class EldenEnv(gym.Env):
                 self.consecutive_deaths += 1
                 if self.consecutive_deaths > 5:
                     self.consecutive_deaths = 0
+                    requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
                     time.sleep(5 * 60)
@@ -451,7 +454,7 @@ class EldenEnv(gym.Env):
                     #requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                     #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                     time.sleep(1)
-
+                requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
             self.done = True
         #print('final steps')
         t4 = time.time()
@@ -544,7 +547,7 @@ class EldenEnv(gym.Env):
                         "num_run": self.num_runs,
                         "lowest_boss_hp": avg_boss_hp}
 
-        requests.post(f"http://{self.agent_ip}:6000/obs/log", headers=headers, data=json.dumps(json_message))
+        requests.post(f"http://{self.stream_pc_ip}:6000/obs/log/attempt_update", headers=headers, data=json.dumps(json_message))
 
         frame = self.grab_screen_shot()
         # next_text_image = frame[1015:1040, 155:205]

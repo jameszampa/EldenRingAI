@@ -26,7 +26,7 @@ else:
 	logdir = f"logs/1668613762/"
 
 
-env = EldenEnv(logdir, resume=RESUME)
+env = EldenEnv(logdir, resume=RESUME, stream_pc_ip='192.168.4.67')
 
 if not RESUME:
 	model = A2C('MultiInputPolicy',
