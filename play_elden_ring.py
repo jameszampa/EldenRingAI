@@ -294,11 +294,11 @@ def init_fight():
             time.sleep(1)
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release(kb.Key.space)
-            time.sleep(0.1)
-            elden_agent.keyboard.press('q')
-            time.sleep(0.1)
-            elden_agent.keyboard.release('q')
-
+            time.sleep(1)
+            elden_agent.keyboard.tap('q')
+            time.sleep(1)
+            elden_agent.keyboard.tap('q')
+            
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})

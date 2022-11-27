@@ -8,7 +8,7 @@ import time
 
 RESUME = False
 TIMESTEPS = 6000 * 10
-HORIZON_WINDOW = 6000
+HORIZON_WINDOW = 3000
 
 
 if not RESUME:
@@ -33,8 +33,8 @@ if not RESUME:
 						env,
 						tensorboard_log=logdir,
 						n_steps=HORIZON_WINDOW,
-						device="cuda:1",
-						verbose=1)
+						verbose=1,
+						device='cpu')
 	iters = 0
 else:
 	model_path = f"{models_dir}/864000.zip"

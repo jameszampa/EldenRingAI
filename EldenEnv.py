@@ -20,14 +20,12 @@ from EldenReward import EldenReward
 from tensorboardX import SummaryWriter
 
 
-HORIZON_WINDOW = 6000
+HORIZON_WINDOW = 3000
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
   # Restrict TensorFlow to only use the first GPU
   try:
-    tf.config.set_visible_devices(gpus[1], 'GPU')
-    tf.config.experimental.set_memory_growth(gpus[1], True)
     tf.config.set_visible_devices(gpus[0], 'GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
     logical_gpus = tf.config.list_logical_devices('GPU')
@@ -483,7 +481,7 @@ class EldenEnv(gym.Env):
         # print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         # print("t4-t_end took {:.5f} seconds".format(t_end - t4))
         self.last_fps.append(1 / (t_end - t0))
-        desired_fps = (1 / 30) 
+        desired_fps = (1 / 15) 
         time_to_sleep = desired_fps - (t_end - t0)
         #print(1 / (time.time() - t0))
         if time_to_sleep > 0:

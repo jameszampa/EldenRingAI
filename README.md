@@ -12,5 +12,9 @@ damage and dying (dying is a better reward than wandering away and auto returing
 of the boss, this reward is increased linearly as the boss hp goes closer to 0. The bot also gets an instantanous reward for doing damage to the boss. The
 bot is rewarded for finding the boss, and rewarded for staying alive while fighting the boss. 
 
+## Lauch Elden Ring Offline
+https://www.reddit.com/r/linux_gaming/comments/t0p7hq/fix_for_elden_ring_to_play_in_offline_mode/
+
+
 # Watch it live
 [![IMAGE ALT TEXT HERE](Elden_Ring_Tree_Sentinel_guide_header.jpg)](https://www.twitch.tv/eldenringai)
