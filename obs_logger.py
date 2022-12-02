@@ -49,7 +49,7 @@ def status_update():
             print('Log to OBS')
             request_json = request.get_json(force=True)
             with open('status.txt', 'w') as f:
-                f.write(f"{request_json['update']}")
+                f.write(f"{request_json['text']}")
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
