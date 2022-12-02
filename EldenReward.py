@@ -315,9 +315,9 @@ class EldenReward:
             boss_dmg_reward *= 8
 
         no_dmg_taken_reward = 0
-        if (time.time() - self.dmg_timer) > 0.5:
-            if self.time_since_taken_dmg > 0.5:
-                no_dmg_taken_reward = 1
+        if (time.time() - self.dmg_timer) > 1:
+            if self.time_since_taken_dmg > 1:
+                no_dmg_taken_reward = 0.1
             self.dmg_timer = time.time()
 
         t_end = time.time()

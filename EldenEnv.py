@@ -75,7 +75,10 @@ def timer_callback(t_start):
         out_str += str(time.strftime('%H:%M:%S', duration))
         headers = {"Content-Type": "application/json"}
         json_message = {'timer':out_str}
-        requests.post(f"http://192.168.4.67:6000/obs/log/timer_update", headers=headers, data=json.dumps(json_message))
+        try:
+            requests.post(f"http://192.168.4.67:6000/obs/log/timer_update", headers=headers, data=json.dumps(json_message))
+        except:
+            pass
         time.sleep(1)
 
 
@@ -256,6 +259,7 @@ class EldenEnv(gym.Env):
         self.rewardGen = EldenReward(1, logdir)
         self.death = False
         self.t_start = time.time()
+        self.t_init = time.time()
         self.done = False
         self.iteration = 0
         self.first_step = False
@@ -281,7 +285,7 @@ class EldenEnv(gym.Env):
         self.time_since_restart = time.time()
         self.wasHealed = False
         if not resume:
-            threading.Thread(target=timer_callback, args=(time.time(),)).start()
+            threading.Thread(target=timer_callback, args=(self.t_init,)).start()
         else:
             with open('obs_timer.txt', 'r') as f:
                 matches = re.match(r"(\d\d):(\d\d):(\d\d):(\d\d).*", f.read())
@@ -307,10 +311,43 @@ class EldenEnv(gym.Env):
 
     def step(self, action):
         if self.first_step:
-            headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
-            requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/start", headers=headers)
-            self.rewardGen.dmg_timer = time.time()
+            step_start = time.time()
+            if step_start - self.rewardGen.time_since_taken_dmg > 5:
+                headers = {"Content-Type": "application/json"}
+                for i in range(5):
+                    take_action(4)
+                    #requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
+                    #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                    time.sleep(1)
+                #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
+                requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
+                json_message = {'text': 'Collecting rollout buffer'}
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.stream_pc_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+                self.done = True
+                self.rewardGen.time_since_death = time.time()
+                
+            else:
+                headers = {"Content-Type": "application/json"}
+                requests.post(f"http://{self.agent_ip}:6000/action/init_fight", headers=headers)
+                try:
+                    requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/start", headers=headers)
+                except:
+                    pass
+                self.rewardGen.dmg_timer = time.time()
+                self.t_start = time.time()
+                duration = time.gmtime(time.time() - self.t_init)
+                days = int(np.floor((time.time() - self.t_init) / (24 * 60 * 60)))
+                out_str = str(days).zfill(2) + ":"
+                out_str += str(time.strftime('%H:%M:%S', duration))
+                headers = {"Content-Type": "application/json"}
+                json_message = {'attempt_num':self.num_runs,
+                                'start':out_str}
+                with open('recording_dict.txt', 'a') as f:
+                    f.write(json.dumps(json_message))
+                    f.write('\n')
+
+
         #print('step start')
         t0 = time.time()
         # if not self.first_step:
@@ -406,13 +443,26 @@ class EldenEnv(gym.Env):
         #print('custom action')
         if not self.death and not self.done:
             # Time limit for fighting Tree sentienel (600 seconds or 10 minutes)
-            if (time.time() - self.t_start) > 30 and not self.rewardGen.seen_boss:
+            if (time.time() - self.t_start) > 60 and not self.rewardGen.seen_boss:
                 headers = {"Content-Type": "application/json"}
                 for i in range(5):
                     take_action(4)
                     #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                     time.sleep(1)
-                requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                duration = time.gmtime(time.time() - self.t_init)
+                days = int(np.floor((time.time() - self.t_init) / (24 * 60 * 60)))
+                out_str = str(days).zfill(2) + ":"
+                out_str += str(time.strftime('%H:%M:%S', duration))
+                headers = {"Content-Type": "application/json"}
+                json_message = {'attempt_num':self.num_runs,
+                                'end':out_str}
+                with open('recording_dict.txt', 'a') as f:
+                    f.write(json.dumps(json_message))
+                    f.write('\n')
+                try:
+                    requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                except:
+                    pass
                 #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                 requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
                 self.done = True
@@ -431,7 +481,20 @@ class EldenEnv(gym.Env):
                 self.consecutive_deaths += 1
                 if self.consecutive_deaths > 5:
                     self.consecutive_deaths = 0
-                    requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                    duration = time.gmtime(time.time() - self.t_init)
+                    days = int(np.floor((time.time() - self.t_init) / (24 * 60 * 60)))
+                    out_str = str(days).zfill(2) + ":"
+                    out_str += str(time.strftime('%H:%M:%S', duration))
+                    headers = {"Content-Type": "application/json"}
+                    json_message = {'attempt_num':self.num_runs,
+                                    'end':out_str}
+                    with open('recording_dict.txt', 'a') as f:
+                        f.write(json.dumps(json_message))
+                        f.write('\n')
+                    try:
+                        requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                    except:
+                        pass
                     headers = {"Content-Type": "application/json"}
                     requests.post(f"http://{self.agent_ip}:6000/action/stop_elden_ring", headers=headers)
                     time.sleep(5 * 60)
@@ -454,7 +517,20 @@ class EldenEnv(gym.Env):
                     #requests.post(f"http://{self.agent_ip}:6000/action/custom/{4}", headers=headers)
                     #requests.post(f"http://{self.agent_ip}:6000/action/release_keys/{1}", headers=headers)
                     time.sleep(1)
-                requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                duration = time.gmtime(time.time() - self.t_init)
+                days = int(np.floor((time.time() - self.t_init) / (24 * 60 * 60)))
+                out_str = str(days).zfill(2) + ":"
+                out_str += str(time.strftime('%H:%M:%S', duration))
+                headers = {"Content-Type": "application/json"}
+                json_message = {'attempt_num':self.num_runs,
+                                'end':out_str}
+                with open('recording_dict.txt', 'a') as f:
+                    f.write(json.dumps(json_message))
+                    f.write('\n')
+                try:
+                    requests.post(f"http://{self.stream_pc_ip}:6000/obs/recording/stop", headers=headers)
+                except:
+                    pass
             self.done = True
         #print('final steps')
         t4 = time.time()
@@ -484,7 +560,7 @@ class EldenEnv(gym.Env):
         # print("t3-t4 took {:.5f} seconds".format(t4 - t3))
         # print("t4-t_end took {:.5f} seconds".format(t_end - t4))
         self.last_fps.append(1 / (t_end - t0))
-        desired_fps = (1 / 15) 
+        desired_fps = (1 / 24) 
         time_to_sleep = desired_fps - (t_end - t0)
         #print(1 / (time.time() - t0))
         if time_to_sleep > 0:
@@ -509,7 +585,7 @@ class EldenEnv(gym.Env):
             requests.post(f"http://{self.agent_ip}:6000/action/return_to_grace", headers=headers)
             json_message = {'text': 'Collecting rollout buffer'}
             headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+            requests.post(f"http://{self.stream_pc_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
             self.done = True
             self.rewardGen.time_since_death = time.time()
         return spaces_dict, self.reward, self.done, info
@@ -527,7 +603,7 @@ class EldenEnv(gym.Env):
 
         json_message = {'text': 'Check for frozen screen'}
         headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+        requests.post(f"http://{self.stream_pc_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
         self.action_history = []
         avg_fps = 0
         for i in range(len(self.last_fps)):
@@ -547,8 +623,10 @@ class EldenEnv(gym.Env):
                         "num_run": self.num_runs,
                         "lowest_boss_hp": avg_boss_hp}
 
-        requests.post(f"http://{self.stream_pc_ip}:6000/obs/log/attempt_update", headers=headers, data=json.dumps(json_message))
-
+        try:
+            requests.post(f"http://{self.stream_pc_ip}:6000/obs/log/attempt_update", headers=headers, data=json.dumps(json_message))
+        except:
+            pass
         frame = self.grab_screen_shot()
         # next_text_image = frame[1015:1040, 155:205]
         # next_text_image = cv2.resize(next_text_image, ((205-155)*3, (1040-1015)*3))
@@ -628,7 +706,7 @@ class EldenEnv(gym.Env):
             time.sleep(0.5)
         #print(hasCrashed)
 
-        if ((not t_since_seen_next is None) and ((time.time() - t_check_frozen_start) > 59)) or lost_connection or (hasCrashed) or (num_next > 60):
+        if ((not t_since_seen_next is None) and ((time.time() - t_check_frozen_start) > 59)) or lost_connection or (hasCrashed) or (num_next > 100):
             print(f"Lost connection: {lost_connection}")
             print(f"Loading Screen Length: {len(loading_screen_history)}")
             print(f"Check ER: {not response.json()['ER']}")
@@ -681,6 +759,7 @@ class EldenEnv(gym.Env):
         self.rewardGen.curr_hp = self.rewardGen.max_hp
         self.rewardGen.time_since_reset = time.time()
         self.rewardGen.time_since_dmg_healed = time.time()
+        self.rewardGen.time_since_taken_dmg = time.time()
         self.rewardGen.hits_taken = 0
         self.rewardGen.total_dmg_taken = 0
         
@@ -701,7 +780,7 @@ class EldenEnv(gym.Env):
         if (self.iteration % HORIZON_WINDOW) == 0:
             json_message = {'text': 'Training model'}
             headers = {"Content-Type": "application/json"}
-            requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+            requests.post(f"http://{self.stream_pc_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
             #time.sleep(120)
         time.sleep(0.5)
         headers = {"Content-Type": "application/json"}
@@ -710,7 +789,7 @@ class EldenEnv(gym.Env):
 
         json_message = {'text': 'Step'}
         headers = {"Content-Type": "application/json"}
-        requests.post(f"http://{self.agent_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
+        requests.post(f"http://{self.stream_pc_ip}:6000/status/update", headers=headers, data=json.dumps(json_message))
         self.rewardGen.time_since_taken_dmg = time.time()
         return spaces_dict
 

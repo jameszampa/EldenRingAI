@@ -25,6 +25,8 @@ import base64
 from PIL import ImageGrab
 import cv2
 import pyautogui
+from mss.linux import MSS as mss
+
 
 class EldenAgent:
     def __init__(self) -> None:
@@ -36,11 +38,40 @@ class EldenAgent:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
 elden_agent = EldenAgent()
+sct = mss()
 
 
 def update_status(text):
     with open('status.txt', 'w') as f:
         f.write(text)
+
+
+def grab_screen_shot(sct):
+    for num, monitor in enumerate(sct.monitors[1:], 1):
+        # Get raw pixels from the screen
+        sct_img = sct.grab(monitor)
+
+        # Create the Image
+        #decoded = cv2.imdecode(np.frombuffer(sct_img, np.uint8), -1)
+        return cv2.cvtColor(np.asarray(sct_img), cv2.COLOR_BGRA2RGB)
+
+
+def isLockedOn():
+    frame = grab_screen_shot(sct)
+    lock_on_img = frame[200:500, 700:1300]
+
+    lower = np.array([100,0,150])
+    upper = np.array([150,75,255])
+    hsv = cv2.cvtColor(lock_on_img, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv, lower, upper)
+    matches = np.argwhere(mask==255)
+    percent_match = len(matches)
+    if percent_match > 100:
+        print(percent_match)
+        return True
+    else:
+        print(percent_match)
+        return False
 
 
 def launch_er():
@@ -266,37 +297,43 @@ def init_fight():
         try:
             print('init fight')
             update_status(f'Initializing fight')
+            elden_agent.keyboard.press('a')
+            time.sleep(4.5)
+            #elden_agent.keyboard.tap('f')
+            elden_agent.keyboard.release('a')
+            elden_agent.keyboard.press('w')
+            time.sleep(2)
+            elden_agent.keyboard.press('a')
+            time.sleep(3)
+            elden_agent.keyboard.release('w')
+            elden_agent.keyboard.release('a')
+            
             elden_agent.keyboard.press('w')
             elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(2.50)
-            elden_agent.keyboard.press('f')
-            time.sleep(0.05)
-            elden_agent.keyboard.release('f')
             time.sleep(4)
-            #elden_agent.keyboard.release(kb.Key.space)
-            #elden_agent.keyboard.release('w')
-
-            elden_agent.keyboard.press('d')
-            #elden_agent.keyboard.press(kb.Key.space)
-            time.sleep(1)
-            elden_agent.keyboard.release('d')
-            #elden_agent.keyboard.press('w')
-            time.sleep(2.5)
-            #elden_agent.keyboard.release('w')
-
-            #elden_agent.keyboard.press('w')
             elden_agent.keyboard.press('a')
             time.sleep(1)
-            #elden_agent.keyboard.release('w')
             elden_agent.keyboard.release('a')
-
-            #elden_agent.keyboard.press('w')
-            time.sleep(1)
+            time.sleep(3.5)
+            # elden_agent.keyboard.press('d')
+            # time.sleep(1)
+            # elden_agent.keyboard.release('d')
+            # time.sleep(1)
             elden_agent.keyboard.release('w')
             elden_agent.keyboard.release(kb.Key.space)
-            time.sleep(2)
+            time.sleep(0.5)
             elden_agent.keyboard.tap('q')
-            
+            attempts = 0
+            time.sleep(0.5)
+            while not isLockedOn() and attempts < 5:
+                elden_agent.keyboard.tap('q')
+                time.sleep(0.5)
+                attempts += 1
+            attempts = 0
+            while not isLockedOn() and attempts < 5:
+                elden_agent.keyboard.tap('q')
+                time.sleep(0.5)
+                attempts += 1
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -434,7 +471,7 @@ def stop_elden_ring():
             time.sleep(1)
             pyautogui.click(button='left')
             try:
-                if len(get_er_process_ids) > 1:
+                if len(get_er_process_ids()) > 1:
                     stop_er()
             except Exception as e:
                 print(str(e))
@@ -451,7 +488,7 @@ def stop_elden_ring():
             elden_agent.keyboard.release(kb.Key.enter)
             time.sleep(60)
             try:
-                if len(get_er_process_ids) > 1:
+                if len(get_er_process_ids()) > 1:
                     stop_er()
             except Exception as e:
                 print(str(e))
@@ -479,7 +516,7 @@ def start_elden_ring():
             update_status(f'Start Elden Ring')
             
             launch_er()
-            time.sleep(15)
+            time.sleep(30)
             pyautogui.moveTo(1220, 667)
             time.sleep(1)
             pyautogui.click(button='left')
