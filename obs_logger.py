@@ -42,7 +42,7 @@ def timer_update():
     else:
         return Response(status=400)
 
-@app.route('/obs/log/status_update', methods=["POST"])
+@app.route('/status/update', methods=["POST"])
 def status_update():
     if request.method == 'POST':
         try:
