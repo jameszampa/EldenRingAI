@@ -42,13 +42,27 @@ def timer_update():
     else:
         return Response(status=400)
 
+@app.route('/obs/log/status_update', methods=["POST"])
+def status_update():
+    if request.method == 'POST':
+        try:
+            print('Log to OBS')
+            request_json = request.get_json(force=True)
+            with open('status.txt', 'w') as f:
+                f.write(f"{request_json['update']}")
+            return Response(status=200)
+        except Exception as e:
+            return json.dumps({'error':str(e)})
+    else:
+        return Response(status=400)
+
 
 @app.route('/obs/recording/stop', methods=["POST"])
 def stop_rec():
     if request.method == 'POST':
         try:
             print('start recording')
-            keyboard.tap('-')
+            #keyboard.tap('-')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
@@ -61,7 +75,7 @@ def start_rec():
     if request.method == 'POST':
         try:
             print('start recording')
-            keyboard.tap('=')
+            #keyboard.tap('=')
             return Response(status=200)
         except Exception as e:
             return json.dumps({'error':str(e)})
