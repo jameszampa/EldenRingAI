@@ -18,3 +18,6 @@ https://www.reddit.com/r/linux_gaming/comments/t0p7hq/fix_for_elden_ring_to_play
 
 # Watch it live
 [![IMAGE ALT TEXT HERE](Elden_Ring_Tree_Sentinel_guide_header.jpg)](https://www.twitch.tv/eldenringai)
+
+# Best Clip
+https://www.twitch.tv/eldenringai/clip/FantasticLittleBeeVoteNay-wkZgofqAlR8YOzO1?filter=clips&range=all&sort=time
